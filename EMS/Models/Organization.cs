@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using EMS.Models.Common;
+using Microsoft.AspNetCore.Identity;
 
 namespace EMS.Models;
 
@@ -22,6 +23,21 @@ public class Organization : AuditableEntity
     public bool IsHolidayCalendarApplicable { get; set; } = true;
 
     public bool IsActive { get; set; } = true;
+
+    public Industry? Industry { get; set; }
+
+    /// <summary>Login of the customer's owner/admin (OrgAdmin role), created when the super admin offers a trial.</summary>
+    public string? OwnerUserId { get; set; }
+    public IdentityUser? Owner { get; set; }
+
+    /// <summary>Last day of the free trial; null for paying customers.</summary>
+    public DateOnly? TrialEndsOn { get; set; }
+
+    /// <summary>Answered during onboarding: true = several shifts / 24x7, false = one general shift, null = not asked yet.</summary>
+    public bool? OperatesInShifts { get; set; }
+
+    /// <summary>Set when the owner finishes the onboarding wizard.</summary>
+    public DateTime? OnboardingCompletedAt { get; set; }
 
     /// <summary>Head-office contacts have BranchId = null; branch POCs carry their BranchId.</summary>
     public ICollection<ContactPerson> Contacts { get; set; } = [];

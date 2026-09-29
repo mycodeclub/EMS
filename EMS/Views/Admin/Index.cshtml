@@ -1,0 +1,65 @@
+@model AdminDashboard
+@using EMS.Services.Onboarding
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<header class="page-head">
+    <div>
+        <h1>Dashboard</h1>
+        <p>Revenue, sales pipeline and free-trial onboarding at a glance.</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn" asp-action="OfferTrial">Offer a free trial</a>
+    </div>
+</header>
+
+<p class="notice" role="note">Revenue, enquiries, leads and customers are sample data. Free trials and their onboarding progress are live.</p>
+
+<partial name="_Stats" model="Model.Stats" />
+
+<div class="grid-3-1">
+    <partial name="Charts/_Columns" model="Model.Revenue" />
+    <partial name="Charts/_Bars" model="Model.Onboarding" />
+</div>
+
+<div class="grid-2">
+    <partial name="Charts/_Columns" model="Model.Enquiries" />
+    <partial name="Charts/_Bars" model="Model.Pipeline" />
+</div>
+
+<div class="grid-3-1">
+    <section class="card">
+        <div class="card-head">
+            <h2>Latest free trials</h2>
+            <a asp-action="Customers">All customers &amp; trials</a>
+        </div>
+        @if (Model.RecentTrials.Count == 0)
+        {
+            <div class="empty">
+                <p>No free trials yet.</p>
+                <p><a class="btn btn-sm" asp-action="Leads">Offer one from a lead</a></p>
+            </div>
+        }
+        else
+        {
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Organization</th><th>Offered</th><th>Trial ends</th><th>Onboarding</th></tr></thead>
+                    <tbody>
+                        @foreach (var trial in Model.RecentTrials)
+                        {
+                            <tr>
+                                <td>@trial.Organization<small>@trial.OwnerEmail</small></td>
+                                <td>@trial.OfferedAt.ToLocalTime().ToShortDate()</td>
+                                <td>@trial.TrialEndsOn?.ToShortDate()</td>
+                                <td><partial name="_TrialStep" model="trial.Step" /></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+    <partial name="Charts/_Bars" model="Model.Industries" />
+</div>

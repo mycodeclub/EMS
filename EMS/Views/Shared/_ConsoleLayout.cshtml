@@ -1,0 +1,60 @@
+@using Microsoft.Extensions.Options
+@using EMS.Models.Landing
+@inject IOptions<CompanyOptions> CompanyOptions
+@{
+    // Layout for the super admin console and the organization admin panel: left menu + page.
+    // Each console's _ViewStart sets ViewData["Menu"] (the menu partial) and ViewData["ConsoleLabel"].
+    var company = CompanyOptions.Value;
+    var title = ViewData["Title"] as string;
+    var label = ViewData["OrganizationName"] as string ?? ViewData["ConsoleLabel"] as string ?? "Admin";
+    var message = TempData["Message"] as string;
+    var error = TempData["Error"] as string;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>@(title is null ? label : $"{title} — {label}") · @company.ProductName</title>
+    <meta name="robots" content="noindex" />
+    <link rel="icon" href="~/img/logo.svg" type="image/svg+xml" />
+    <link rel="alternate icon" href="~/favicon.ico" />
+    <link rel="stylesheet" href="~/css/brand.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/console.css" asp-append-version="true" />
+</head>
+<body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <div class="shell">
+        <aside class="sidebar">
+            <a class="side-brand" href="~/">
+                <img src="~/img/logo.svg" alt="" width="30" height="30" />
+                <div><b>@company.ProductName</b><span>@label</span></div>
+            </a>
+            <nav class="side-nav" aria-label="@label">
+                <partial name="@(ViewData["Menu"] as string ?? "_AdminMenu")" />
+            </nav>
+            <div class="side-foot">
+                <span title="Signed in as">@User.Identity?.Name</span>
+                <form method="post" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Content("~/")">
+                    <button type="submit" class="btn btn-secondary btn-sm">Sign out</button>
+                </form>
+            </div>
+        </aside>
+        <main id="main" class="main">
+            <div class="main-inner">
+                @if (message is not null)
+                {
+                    <p class="alert alert-success" role="status">@message</p>
+                }
+                @if (error is not null)
+                {
+                    <p class="alert alert-error" role="alert">@error</p>
+                }
+                @RenderBody()
+            </div>
+        </main>
+    </div>
+    <script src="~/js/console.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

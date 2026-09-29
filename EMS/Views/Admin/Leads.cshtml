@@ -1,13 +1,20 @@
-@model AdminList<LeadRow>
+@model OfferableList<LeadRow>
 @{
     ViewData["Title"] = "Leads";
     var today = DateOnly.FromDateTime(DateTime.Today);
 }
 
 <header class="page-head">
-    <h1>Leads</h1>
-    <p>Qualified prospects in the sales pipeline, with the next follow-up.</p>
+    <div>
+        <h1>Leads</h1>
+        <p>Qualified prospects in the sales pipeline. Offer a free trial to turn a lead into a customer.</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn" asp-action="OfferTrial">Offer a free trial</a>
+    </div>
 </header>
+
+<partial name="_SampleNotice" />
 
 <partial name="_Stats" model="Model.Stats" />
 
@@ -23,11 +30,10 @@
                     <th>Organization</th>
                     <th>Contact</th>
                     <th>Stage</th>
-                    <th class="num">Employees</th>
-                    <th class="num">Offices</th>
+                    <th>Size</th>
                     <th class="num">Est. value / month</th>
-                    <th>Owner</th>
                     <th>Next follow-up</th>
+                    <th><span class="sr-only">Actions</span></th>
                 </tr>
             </thead>
             <tbody>
@@ -45,17 +51,13 @@
                         <td>@row.Organization<small>@row.Industry.DisplayName()</small></td>
                         <td>@row.ContactName<small><a href="mailto:@row.Email">@row.Email</a></small></td>
                         <td><span class="badge @badge">@row.Stage.DisplayName()</span></td>
-                        <td class="num">@row.Employees</td>
-                        <td class="num">@row.Offices</td>
+                        <td>@row.Employees staff<small>@row.Offices office@(row.Offices == 1 ? "" : "s")</small></td>
                         <td class="num">@row.MonthlyValue.ToRupees()</td>
-                        <td>@row.Owner</td>
                         <td class="@(missed ? "late" : null)">
                             @(row.NextFollowUp == today ? "Today" : row.NextFollowUp.ToShortDate())
-                            @if (missed)
-                            {
-                                <small>Missed</small>
-                            }
+                            <small>@(missed ? "Missed · " : "")@row.Owner</small>
                         </td>
+                        <td class="num"><partial name="_OfferAction" model="(row.Email, Model.OfferedEmails)" /></td>
                     </tr>
                 }
             </tbody>

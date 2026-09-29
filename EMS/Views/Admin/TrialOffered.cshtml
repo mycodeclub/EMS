@@ -1,0 +1,47 @@
+@model EMS.Services.Onboarding.TrialOffer
+@{
+    ViewData["Title"] = "Free trial created";
+}
+
+<header class="page-head">
+    <div>
+        <h1>Free trial created</h1>
+        <p>@Model.Organization.Name can start setting up now. The trial runs until @Model.Organization.TrialEndsOn?.ToShortDate().</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-secondary" asp-action="Customers">View customers &amp; trials</a>
+        <a class="btn" asp-action="Leads">Back to leads</a>
+    </div>
+</header>
+
+@if (Model.EmailSent)
+{
+    <p class="alert alert-success" role="status">Welcome email sent to <b>@Model.OwnerEmail</b> with their sign-in details.</p>
+}
+else
+{
+    <p class="alert alert-error" role="alert">The trial was created, but the welcome email could not be sent. Share the sign-in details below with the owner yourself.</p>
+}
+
+<div class="grid-3-1">
+    <section class="card">
+        <div class="card-head">
+            <h2>Email to the owner</h2>
+            <span>@Model.EmailSubject</span>
+        </div>
+        <iframe title="Welcome email preview" srcdoc="@Model.EmailHtml" style="display:block;width:100%;height:620px;border:0;background:#f5f5f7" sandbox></iframe>
+    </section>
+    <section class="card">
+        <div class="card-head"><h2>Sign-in details</h2></div>
+        <div class="card-body">
+            <dl class="slip-meta" style="grid-template-columns:1fr;margin:0">
+                <div><span>Email</span><b>@Model.OwnerEmail</b></div>
+                <div><span>Temporary password</span><b class="mono">@Model.TemporaryPassword</b></div>
+            </dl>
+            <p class="hint" style="margin-top:12px;font-size:13px;color:var(--muted)">
+                Shown only once. The owner must choose a new password when they first sign in, then completes the organization profile,
+                sets up shifts and adds employees.
+            </p>
+        </div>
+    </section>
+</div>

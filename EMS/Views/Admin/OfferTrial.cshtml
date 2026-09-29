@@ -1,0 +1,63 @@
+@model TrialInput
+@{
+    ViewData["Title"] = "Offer a free trial";
+}
+
+<header class="page-head">
+    <div>
+        <h1>Offer a free trial</h1>
+        <p>Creates the customer's organization and an owner login, then emails the owner a temporary password.</p>
+    </div>
+</header>
+
+<section class="card form-card" style="max-width:760px">
+    <form asp-action="OfferTrial" method="post" novalidate>
+        <div asp-validation-summary="ModelOnly" class="alert alert-error"></div>
+
+        <h2 class="form-section">Organization</h2>
+        <div class="form-grid">
+            <div class="field span-2">
+                <label asp-for="OrganizationName"></label>
+                <input asp-for="OrganizationName" autocomplete="organization" />
+                <span asp-validation-for="OrganizationName"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Industry"></label>
+                <select asp-for="Industry" asp-items="Html.GetEnumSelectList<Industry>()">
+                    <option value="">Choose…</option>
+                </select>
+                <span asp-validation-for="Industry"></span>
+            </div>
+            <div class="field">
+                <label asp-for="TrialDays"></label>
+                <input asp-for="TrialDays" type="number" min="7" max="90" />
+                <span asp-validation-for="TrialDays"></span>
+            </div>
+        </div>
+
+        <h2 class="form-section">Owner / admin</h2>
+        <div class="form-grid">
+            <div class="field span-2">
+                <label asp-for="OwnerName"></label>
+                <input asp-for="OwnerName" autocomplete="name" />
+                <span asp-validation-for="OwnerName"></span>
+            </div>
+            <div class="field">
+                <label asp-for="OwnerEmail"></label>
+                <input asp-for="OwnerEmail" type="email" autocomplete="email" />
+                <span class="hint">They sign in with this email.</span>
+                <span asp-validation-for="OwnerEmail"></span>
+            </div>
+            <div class="field">
+                <label asp-for="OwnerPhone"></label>
+                <input asp-for="OwnerPhone" type="tel" autocomplete="tel" placeholder="+91" />
+                <span asp-validation-for="OwnerPhone"></span>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn">Create trial &amp; email the owner</button>
+            <a class="btn btn-ghost" asp-action="Leads">Cancel</a>
+        </div>
+    </form>
+</section>

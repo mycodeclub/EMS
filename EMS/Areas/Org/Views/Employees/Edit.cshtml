@@ -1,0 +1,118 @@
+@model EmployeeInput
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    var isNew = Model.Id is null;
+    ViewData["Title"] = isNew ? "Add employee" : $"Edit {Model.FirstName}";
+    var shifts = ViewData["Shifts"] as List<SelectListItem> ?? [];
+}
+
+<header class="page-head">
+    <div>
+        <h1>@(isNew ? "Add employee" : $"{Model.FirstName} {Model.LastName}")</h1>
+        <p>@(isNew ? "Only first name and joining date are required; fill in the rest when you have it." : $"Employee code {Model.EmpCode}")</p>
+    </div>
+</header>
+
+<section class="card form-card" style="max-width:860px">
+    <form asp-action="Save" method="post" novalidate>
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="ModelOnly" class="alert alert-error"></div>
+
+        <h2 class="form-section">Personal</h2>
+        <div class="form-grid">
+            <div class="field">
+                <label asp-for="FirstName"></label>
+                <input asp-for="FirstName" autocomplete="off" />
+                <span asp-validation-for="FirstName"></span>
+            </div>
+            <div class="field">
+                <label asp-for="LastName"></label>
+                <input asp-for="LastName" autocomplete="off" />
+                <span asp-validation-for="LastName"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Gender"></label>
+                <select asp-for="Gender" asp-items="Html.GetEnumSelectList<Gender>()"><option value="">—</option></select>
+            </div>
+            <div class="field">
+                <label asp-for="DateOfBirth"></label>
+                <input asp-for="DateOfBirth" type="date" />
+            </div>
+            <div class="field">
+                <label asp-for="Mobile"></label>
+                <input asp-for="Mobile" type="tel" placeholder="+91" />
+                <span asp-validation-for="Mobile"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Email"></label>
+                <input asp-for="Email" type="email" />
+                <span asp-validation-for="Email"></span>
+            </div>
+        </div>
+
+        <h2 class="form-section">Job</h2>
+        <div class="form-grid">
+            <div class="field">
+                <label asp-for="EmpCode"></label>
+                @if (isNew)
+                {
+                    <input asp-for="EmpCode" placeholder="@ViewData["NextCode"] (automatic)" />
+                    <span class="hint">Leave empty to use @ViewData["NextCode"]. Codes are never reused.</span>
+                }
+                else
+                {
+                    <input asp-for="EmpCode" readonly />
+                }
+                <span asp-validation-for="EmpCode"></span>
+            </div>
+            <div class="field">
+                <label asp-for="ShiftId"></label>
+                <select asp-for="ShiftId" asp-items="shifts"><option value="">No fixed shift</option></select>
+                <span asp-validation-for="ShiftId"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Department"></label>
+                <input asp-for="Department" />
+            </div>
+            <div class="field">
+                <label asp-for="Designation"></label>
+                <input asp-for="Designation" />
+            </div>
+            <div class="field">
+                <label asp-for="DateOfJoining"></label>
+                <input asp-for="DateOfJoining" type="date" />
+                <span asp-validation-for="DateOfJoining"></span>
+            </div>
+            <div class="field">
+                <label asp-for="DateOfLeaving"></label>
+                <input asp-for="DateOfLeaving" type="date" />
+                <span class="hint">Only when the employee has left or is serving notice.</span>
+                <span asp-validation-for="DateOfLeaving"></span>
+            </div>
+            <div class="field">
+                <label asp-for="MonthlySalary"></label>
+                <input asp-for="MonthlySalary" type="number" min="0" step="100" />
+                <span class="hint">Gross per month. Salary slips reduce it for unpaid days.</span>
+                <span asp-validation-for="MonthlySalary"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Status"></label>
+                <select asp-for="Status" asp-items="Html.GetEnumSelectList<EmployeeStatus>()"></select>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn">@(isNew ? "Add employee" : "Save changes")</button>
+            <a class="btn btn-ghost" asp-action="Index">Cancel</a>
+        </div>
+    </form>
+
+    @if (!isNew)
+    {
+        <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="form-actions" style="border-top:1px solid var(--hair);padding-top:16px">
+            <span class="hint" style="font-size:13px;color:var(--muted)">Added by mistake? Remove the employee. Anyone with attendance must get a leaving date instead.</span>
+            <span class="spacer"></span>
+            <button type="submit" class="btn btn-danger btn-sm">Remove employee</button>
+        </form>
+    }
+</section>

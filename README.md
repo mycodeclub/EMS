@@ -36,7 +36,7 @@ dotnet run
 
 Open https://localhost:7134 (http://localhost:5046 redirects to it).
 
-On startup the app creates the `SuperAdmin` role and the super admin account below if they do not exist yet.
+On startup the app creates the `SuperAdmin` and `OrgAdmin` roles and the super admin account below if they do not exist yet.
 
 ## Development login
 
@@ -44,11 +44,24 @@ On startup the app creates the `SuperAdmin` role and the super admin account bel
 |-------------|------------------------|-------------------|
 | Super admin | `superadmin@ems.local` | `SuperAdmin#2026` |
 
-After signing in, the super admin lands on the admin console at `/Admin`: **Enquiries**, **Leads**, **Active customers** and **Billing**. These screens show sample data from `Services/Admin/SampleAdminData.cs`; they are not connected to the database yet.
+> These credentials are for local development only. The password lives in `appsettings.Development.json`. In any other environment set `SuperAdmin__Email` and `SuperAdmin__Password` (and `ConnectionStrings__DefaultConnection`) as environment variables. An existing account keeps its password; changing the setting later does not reset it.
+
+After signing in, the super admin lands on the admin console at `/Admin`: a dashboard with charts, **Enquiries**, **Leads**, **Customers & trials** and **Billing**. Revenue, enquiries, leads, paying customers and billing are sample data from `Services/Admin/SampleAdminData.cs`; free trials and their onboarding progress are real.
 
 Anyone can register a normal account from the Register page. It has no admin access.
 
-> These credentials are for local development only. The password lives in `appsettings.Development.json`. In any other environment set `SuperAdmin__Email` and `SuperAdmin__Password` (and `ConnectionStrings__DefaultConnection`) as environment variables. An existing account keeps its password; changing the setting later does not reset it.
+## Try the customer flow
+
+1. As super admin, open **Leads** and click **Offer free trial** on a lead (or **Offer a free trial** for a new customer). This creates the organization, a *Head office* branch and the owner's login with a temporary password, and emails the owner.
+2. Without an SMTP server, the email is saved as an `.eml` file in `EMS/App_Data/mail` (open it in Outlook, Thunderbird or a text editor). The confirmation page also shows the email and the temporary password once.
+3. Sign in as the owner with that email and password. The setup wizard asks them to:
+   1. choose their own password,
+   2. complete the organization profile,
+   3. say whether they run several shifts / 24x7 (hospital, hotel, BPO, call centre) and enter the shift timings, or one general shift,
+   4. add employees (or skip).
+4. They then land on their organization panel at `/Org`: **Dashboard**, **Employees**, **Attendance** (a month register; earlier months can be filled in or corrected), **Salary slips** (monthly salary pro-rated by paid days, printable), **Shifts** and **Organization profile**.
+
+Salary slips do not apply statutory deductions (PF, ESI, professional tax, TDS) yet.
 
 ## Everyday commands
 
@@ -71,6 +84,7 @@ Table and column names are case-sensitive in PostgreSQL, so quote them: `select 
 | `ConnectionStrings:DefaultConnection` | `appsettings.json` | PostgreSQL connection |
 | `SuperAdmin:Email` / `SuperAdmin:Password` | `appsettings.json` / `appsettings.Development.json` | Account seeded at startup |
 | `Company` | `appsettings.json` | Company details shown on the landing page |
+| `Email:SmtpHost`, `SmtpPort`, `UserName`, `Password`, `FromAddress` | `appsettings.json` / environment | Outgoing mail. With no `SmtpHost`, mail is saved to `Email:PickupDirectory` (default `App_Data/mail`) |
 
 ## Troubleshooting
 

@@ -1,0 +1,76 @@
+@model EMS.Models.Onboarding.ShiftsInput
+@using EMS.Models.Onboarding
+@{
+    // Shift setup, shared by onboarding and the Shifts page. console.js keeps one row for "No" and offers the 24x7 preset for "Yes".
+    var multi = Model.OperatesInShifts == true;
+}
+<fieldset style="border:0;padding:0;margin:0">
+    <legend class="field-label" style="margin-bottom:10px">Do you run more than one shift, or operate 24x7?</legend>
+    <div class="choice">
+        <label>
+            <input type="radio" name="OperatesInShifts" value="true" @(multi ? "checked" : null) />
+            <span>Yes, we run shifts<small>Hospitals, hotels, BPOs, call centres and factories with morning, evening or night shifts.</small></span>
+        </label>
+        <label>
+            <input type="radio" name="OperatesInShifts" value="false" @(Model.OperatesInShifts == false ? "checked" : null) />
+            <span>No, one general shift<small>Everyone works the same hours, e.g. 9:30 am to 6:30 pm.</small></span>
+        </label>
+    </div>
+    <span asp-validation-for="OperatesInShifts"></span>
+</fieldset>
+
+<section class="card" style="margin-top:20px">
+    <div class="card-head">
+        <h2>Shift timings</h2>
+        <span>Night shifts can end after midnight, e.g. 22:00 to 06:00.</span>
+    </div>
+    <div class="table-wrap">
+        <table class="editor" id="shift-rows" data-rows="shift-row" data-prefix="Shifts">
+            <thead>
+                <tr><th>Shift name</th><th>Starts</th><th>Ends</th><th>Break (min)</th><th><span class="sr-only">Remove</span></th></tr>
+            </thead>
+            <tbody>
+                @for (var i = 0; i < Model.Shifts.Count; i++)
+                {
+                    <tr>
+                        <td>
+                            <input type="hidden" asp-for="Shifts[i].Id" />
+                            <input asp-for="Shifts[i].Name" aria-label="Shift name" />
+                            <span asp-validation-for="Shifts[i].Name"></span>
+                        </td>
+                        <td><input asp-for="Shifts[i].StartTime" type="time" aria-label="Starts" /></td>
+                        <td><input asp-for="Shifts[i].EndTime" type="time" aria-label="Ends" /><span asp-validation-for="Shifts[i].EndTime"></span></td>
+                        <td><input asp-for="Shifts[i].BreakMinutes" type="number" min="0" max="240" class="w-sm" aria-label="Break in minutes" /></td>
+                        <td class="num"><button type="button" class="btn btn-danger btn-sm" data-remove-row>Remove</button></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="card-body" data-multi-only>
+        <button type="button" class="btn btn-secondary btn-sm" data-add-row="shift-rows">+ Add a shift</button>
+    </div>
+</section>
+
+<template id="shift-row">
+    <tr>
+        <td><input name="Shifts[0].Name" type="text" aria-label="Shift name" required /></td>
+        <td><input name="Shifts[0].StartTime" type="time" value="09:00" aria-label="Starts" /></td>
+        <td><input name="Shifts[0].EndTime" type="time" value="17:00" aria-label="Ends" /></td>
+        <td><input name="Shifts[0].BreakMinutes" type="number" min="0" max="240" value="30" class="w-sm" aria-label="Break in minutes" /></td>
+        <td class="num"><button type="button" class="btn btn-danger btn-sm" data-remove-row>Remove</button></td>
+    </tr>
+</template>
+
+<template id="shift-preset">
+    @foreach (var shift in ShiftsInput.RoundTheClock())
+    {
+        <tr>
+            <td><input name="Shifts[0].Name" type="text" value="@shift.Name" aria-label="Shift name" required /></td>
+            <td><input name="Shifts[0].StartTime" type="time" value="@shift.StartTime.ToString("HH:mm")" aria-label="Starts" /></td>
+            <td><input name="Shifts[0].EndTime" type="time" value="@shift.EndTime.ToString("HH:mm")" aria-label="Ends" /></td>
+            <td><input name="Shifts[0].BreakMinutes" type="number" min="0" max="240" value="@shift.BreakMinutes" class="w-sm" aria-label="Break in minutes" /></td>
+            <td class="num"><button type="button" class="btn btn-danger btn-sm" data-remove-row>Remove</button></td>
+        </tr>
+    }
+</template>

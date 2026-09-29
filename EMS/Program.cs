@@ -5,6 +5,7 @@ using EMS.Controllers;
 using EMS.Data;
 using EMS.Models.Landing;
 using EMS.Services;
+using EMS.Services.Email;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +20,7 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.Requ
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.Configure<SuperAdminOptions>(builder.Configuration.GetSection(SuperAdminOptions.Section));
+builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection(EmailOptions.Section));
 builder.Services.AddControllersWithViews();
 builder.Services.Configure<CompanyOptions>(builder.Configuration.GetSection(CompanyOptions.Section));
 
@@ -61,6 +63,11 @@ app.UseRateLimiter();
 app.UseAuthorization();
 
 app.MapStaticAssets();
+
+app.MapControllerRoute(
+    name: "areas",
+    pattern: "{area:exists}/{controller=Dashboard}/{action=Index}/{id?}")
+    .WithStaticAssets();
 
 app.MapControllerRoute(
     name: "default",

@@ -1,0 +1,27 @@
+@{
+    var step = ViewData["Step"] as OnboardingStep? ?? OnboardingStep.Password;
+    var next = ViewData["NextStep"] as OnboardingStep? ?? step;
+    (OnboardingStep Step, string Label)[] steps =
+    [
+        (OnboardingStep.Password, "Your password"),
+        (OnboardingStep.Profile, "Organization profile"),
+        (OnboardingStep.Shifts, "Shifts"),
+        (OnboardingStep.Employees, "Employees"),
+    ];
+}
+<ol class="stepper" aria-label="Setup progress">
+    @foreach (var (s, label) in steps)
+    {
+        var state = s == step ? "current" : s < next ? "done" : null;
+        <li class="@state" aria-current="@(s == step ? "step" : null)">
+            @if (s < next && s != step && s != OnboardingStep.Password)
+            {
+                <a asp-action="@s.ToString()">@label</a>
+            }
+            else
+            {
+                @label
+            }
+        </li>
+    }
+</ol>

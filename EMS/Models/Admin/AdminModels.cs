@@ -1,9 +1,19 @@
 using System.ComponentModel.DataAnnotations;
+using EMS.Models.Common;
 
 namespace EMS.Models.Admin;
 
 /// <summary>A list screen of the admin console: summary tiles above a table.</summary>
 public record AdminList<T>(IReadOnlyList<StatTile> Stats, IReadOnlyList<T> Rows);
+
+public record AdminDashboard(
+    IReadOnlyList<StatTile> Stats, ColumnChart Revenue, ColumnChart Enquiries, BarChart Pipeline, BarChart Industries,
+    BarChart Onboarding, IReadOnlyList<EMS.Services.Onboarding.TrialRow> RecentTrials);
+
+/// <summary>A list screen plus the owner emails that already have a trial, to show "Trial offered" instead of the action.</summary>
+public record OfferableList<T>(IReadOnlyList<StatTile> Stats, IReadOnlyList<T> Rows, IReadOnlySet<string> OfferedEmails);
+
+public record CustomersPage(AdminList<CustomerRow> Sample, IReadOnlyList<EMS.Services.Onboarding.TrialRow> Trials);
 
 public record StatTile(string Label, string Value, string? Note = null);
 

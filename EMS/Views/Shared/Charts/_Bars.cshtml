@@ -1,0 +1,30 @@
+@using EMS.Models.Common
+@model BarChart
+<figure class="card chart">
+    <figcaption class="chart-head">
+        <div>
+            <h2>@Model.Title</h2>
+            @if (Model.Subtitle is not null)
+            {
+                <p>@Model.Subtitle</p>
+            }
+        </div>
+    </figcaption>
+    @if (Model.Points.Count == 0)
+    {
+        <p class="empty">Nothing to show yet.</p>
+    }
+    else
+    {
+        <ul class="hbars">
+            @foreach (var point in Model.Points)
+            {
+                <li tabindex="0" data-tip="@point.Label: @point.Display">
+                    <span class="hb-label">@point.Label</span>
+                    <span class="hb-track"><i style="--w:@Charts.Percent(point.Value, Model.Max)"></i></span>
+                    <b>@point.Value.ToString("0.##")</b>
+                </li>
+            }
+        </ul>
+    }
+</figure>

@@ -12,6 +12,22 @@ public static class SampleAdminData
     private static DateTime Now => DateTime.Now;
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
 
+    /// <summary>Monthly recurring revenue for the last 12 months, ending with the current month.</summary>
+    public static IReadOnlyList<(DateOnly Month, decimal Amount)> RevenueByMonth()
+    {
+        decimal[] amounts = [112_000, 118_000, 121_000, 129_000, 134_000, 141_000, 150_000, 158_000, 166_000, 179_000, 188_000, 201_000];
+        var current = new DateOnly(Today.Year, Today.Month, 1);
+        return amounts.Select((amount, i) => (current.AddMonths(i - amounts.Length + 1), amount)).ToList();
+    }
+
+    /// <summary>Website enquiries per week for the last 8 weeks, ending with the current week.</summary>
+    public static IReadOnlyList<(DateOnly WeekStart, int Count)> EnquiriesByWeek()
+    {
+        int[] counts = [4, 6, 5, 9, 7, 11, 8, 12];
+        var monday = Today.AddDays(-(((int)Today.DayOfWeek + 6) % 7));
+        return counts.Select((count, i) => (monday.AddDays(7 * (i - counts.Length + 1)), count)).ToList();
+    }
+
     public static IReadOnlyList<EnquiryRow> Enquiries() =>
     [
         new(Now.AddHours(-2), "Dr. Meera Kulkarni", "Sunrise Multispeciality Hospital", "meera.k@example.com", "+91 98200 11234", Industry.Hospital, TeamSize.From101To500, EnquiryInterest.Demo, EnquiryStatus.New),

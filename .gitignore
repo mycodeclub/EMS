@@ -485,3 +485,6 @@ $RECYCLE.BIN/
 *.db
 *.db-shm
 *.db-wal
+
+# Emails saved locally when no SMTP host is configured
+EMS/App_Data/

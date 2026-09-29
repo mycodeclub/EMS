@@ -1,0 +1,23 @@
+@model ProfileInput
+@{
+    ViewData["Title"] = "Organization profile";
+}
+
+<partial name="_TrialBanner" />
+
+<header class="page-head">
+    <div>
+        <h1>Organization profile</h1>
+        <p>Shown on salary slips and reports.</p>
+    </div>
+</header>
+
+<section class="card form-card" style="max-width:860px">
+    <form method="post" novalidate>
+        <div asp-validation-summary="ModelOnly" class="alert alert-error"></div>
+        <partial name="_ProfileFields" model="Model" />
+        <div class="form-actions">
+            <button type="submit" class="btn">Save profile</button>
+        </div>
+    </form>
+</section>

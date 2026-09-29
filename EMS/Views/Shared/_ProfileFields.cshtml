@@ -1,0 +1,65 @@
+@model EMS.Models.Onboarding.ProfileInput
+<h2 class="form-section">About your organization</h2>
+<div class="form-grid">
+    <div class="field">
+        <label asp-for="Name"></label>
+        <input asp-for="Name" autocomplete="organization" />
+        <span asp-validation-for="Name"></span>
+    </div>
+    <div class="field">
+        <label asp-for="RegisteredName"></label>
+        <input asp-for="RegisteredName" placeholder="As on your registration certificate" />
+        <span asp-validation-for="RegisteredName"></span>
+    </div>
+    <div class="field">
+        <label asp-for="Industry"></label>
+        <select asp-for="Industry" asp-items="Html.GetEnumSelectList<EMS.Models.Industry>()">
+            <option value="">Choose…</option>
+        </select>
+        <span asp-validation-for="Industry"></span>
+    </div>
+    <div class="field">
+        <label asp-for="GstNumber"></label>
+        <input asp-for="GstNumber" maxlength="15" style="text-transform:uppercase" placeholder="27ABCDE1234F1Z5" />
+        <span asp-validation-for="GstNumber"></span>
+    </div>
+    <div class="field">
+        <label asp-for="Phone"></label>
+        <input asp-for="Phone" type="tel" autocomplete="tel" placeholder="+91" />
+        <span asp-validation-for="Phone"></span>
+    </div>
+    <div class="field">
+        <label asp-for="Email"></label>
+        <input asp-for="Email" type="email" autocomplete="email" />
+        <span asp-validation-for="Email"></span>
+    </div>
+</div>
+
+<h2 class="form-section">Head office address</h2>
+<div class="form-grid">
+    <div class="field span-2">
+        <label asp-for="Line1"></label>
+        <input asp-for="Line1" autocomplete="address-line1" />
+        <span asp-validation-for="Line1"></span>
+    </div>
+    <div class="field span-2">
+        <label asp-for="Line2"></label>
+        <input asp-for="Line2" autocomplete="address-line2" />
+        <span asp-validation-for="Line2"></span>
+    </div>
+    <div class="field">
+        <label asp-for="City"></label>
+        <input asp-for="City" autocomplete="address-level2" />
+        <span asp-validation-for="City"></span>
+    </div>
+    <div class="field">
+        <label asp-for="State"></label>
+        <input asp-for="State" autocomplete="address-level1" />
+        <span asp-validation-for="State"></span>
+    </div>
+    <div class="field">
+        <label asp-for="PinCode"></label>
+        <input asp-for="PinCode" inputmode="numeric" maxlength="6" autocomplete="postal-code" />
+        <span asp-validation-for="PinCode"></span>
+    </div>
+</div>

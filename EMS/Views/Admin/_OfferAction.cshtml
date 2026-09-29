@@ -1,0 +1,9 @@
+@model (string Email, IReadOnlySet<string> Offered)
+@if (Model.Offered.Contains(Model.Email))
+{
+    <span class="badge badge-green">Trial offered</span>
+}
+else
+{
+    <a class="btn btn-secondary btn-sm" asp-action="OfferTrial" asp-route-email="@Model.Email">Offer free trial</a>
+}

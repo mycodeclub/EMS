@@ -1,0 +1,83 @@
+@model List<Employee>
+@{
+    ViewData["Title"] = "Employees";
+    var query = ViewData["Query"] as string;
+    var today = DateOnly.FromDateTime(DateTime.Today);
+}
+
+<header class="page-head">
+    <div>
+        <h1>Employees</h1>
+        <p>Your staff, their shift and salary. Set a leaving date when someone leaves, to keep their history.</p>
+    </div>
+    <div class="page-actions">
+        <form method="get" class="search" role="search">
+            <input type="search" name="q" value="@query" placeholder="Search name, code, designation" aria-label="Search employees" />
+        </form>
+        <a class="btn" asp-action="Create">Add employee</a>
+    </div>
+</header>
+
+<section class="card">
+    <div class="card-head">
+        <h2>@(query is null ? "All employees" : $"Results for \"{query}\"")</h2>
+        <span>@Model.Count employee@(Model.Count == 1 ? "" : "s")</span>
+    </div>
+    @if (Model.Count == 0)
+    {
+        <div class="empty">
+            <p>@(query is null ? "No employees yet." : "No employees match your search.")</p>
+            <p><a class="btn btn-sm" asp-action="Create">Add employee</a></p>
+        </div>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th>Designation</th>
+                        <th>Shift</th>
+                        <th>Mobile</th>
+                        <th>Joined</th>
+                        <th class="num">Monthly salary</th>
+                        <th>Status</th>
+                        <th><span class="sr-only">Actions</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var e in Model)
+                    {
+                        var left = e.DateOfLeaving is { } l && l < today;
+                        <tr>
+                            <td class="mono">@e.EmpCode</td>
+                            <td><a asp-action="Edit" asp-route-id="@e.UniqueId">@e.FullName</a><small>@e.Department</small></td>
+                            <td>@e.Designation</td>
+                            <td>@(e.Shift?.Name ?? "—")</td>
+                            <td>@e.Mobile</td>
+                            <td>@e.DateOfJoining.ToShortDate()</td>
+                            <td class="num">@(e.MonthlySalary is { } salary ? salary.ToRupees() : "—")</td>
+                            <td>
+                                @if (left)
+                                {
+                                    <span class="badge">Left @e.DateOfLeaving!.Value.ToShortDate()</span>
+                                }
+                                else
+                                {
+                                    <span class="badge @(e.Status == EmployeeStatus.Active ? "badge-green" : "badge-blue")">@e.Status.DisplayName()</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="row-actions">
+                                    <a class="btn btn-secondary btn-sm" asp-action="Edit" asp-route-id="@e.UniqueId">Edit</a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

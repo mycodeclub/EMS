@@ -1,0 +1,27 @@
+@{
+    var action = ViewContext.RouteData.Values["action"] as string;
+    string? Current(params string[] actions) => actions.Contains(action) ? "page" : null;
+}
+<p class="side-label">Overview</p>
+<a asp-area="" asp-controller="Admin" asp-action="Index" aria-current="@Current("Index")">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5" /><rect x="14" y="3" width="7" height="5" rx="1.5" /><rect x="14" y="12" width="7" height="9" rx="1.5" /><rect x="3" y="16" width="7" height="5" rx="1.5" /></svg>
+    Dashboard
+</a>
+<p class="side-label">Sales</p>
+<a asp-area="" asp-controller="Admin" asp-action="Enquiries" aria-current="@Current("Enquiries")">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2" /><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" /></svg>
+    Enquiries
+</a>
+<a asp-area="" asp-controller="Admin" asp-action="Leads" aria-current="@Current("Leads", "OfferTrial")">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1" /></svg>
+    Leads
+</a>
+<p class="side-label">Customers</p>
+<a asp-area="" asp-controller="Admin" asp-action="Customers" aria-current="@Current("Customers")">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18" /><path d="M5 21V7l7-4 7 4v14" /><path d="M9 21v-6h6v6" /><path d="M9 10h.01M15 10h.01" /></svg>
+    Customers &amp; trials
+</a>
+<a asp-area="" asp-controller="Admin" asp-action="Billing" aria-current="@Current("Billing")">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 2v20l3-2 3 2 2-2 2 2 3-2 3 2V2l-3 2-3-2-2 2-2-2-3 2z" /><path d="M8 9h8M8 13h8M8 17h5" /></svg>
+    Billing
+</a>

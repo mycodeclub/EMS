@@ -1,0 +1,94 @@
+@using EMS.Models.Common
+@model StackedChart
+@{
+    var max = Model.Max;
+    var sparse = Model.Columns.Count > 10;
+}
+<figure class="card chart">
+    <figcaption class="chart-head">
+        <div>
+            <h2>@Model.Title</h2>
+            @if (Model.Subtitle is not null)
+            {
+                <p>@Model.Subtitle</p>
+            }
+        </div>
+        <ul class="legend">
+            @for (var i = 0; i < Model.Series.Count; i++)
+            {
+                <li><i class="s@(i + 1)"></i>@Model.Series[i]</li>
+            }
+        </ul>
+    </figcaption>
+    @if (Model.IsEmpty)
+    {
+        <p class="empty">Nothing marked for these days yet.</p>
+    }
+    else
+    {
+    <div class="plot">
+        <div class="plot-axis" aria-hidden="true">
+            @foreach (var f in new[] { 0m, 0.5m, 1m })
+            {
+                <span style="bottom:@Charts.Percent(f, 1)">@((max * f).ToString("0.#"))</span>
+            }
+        </div>
+        <div class="plot-area">
+            <div class="gridline" style="top:0"></div>
+            <div class="gridline" style="top:50%"></div>
+            <div class="cols" role="list">
+                @foreach (var column in Model.Columns)
+                {
+                    var total = column.Values.Sum();
+                    var tip = column.Label + ": " + string.Join(", ", Model.Series.Select((s, i) => $"{s} {column.Values[i]:0}"));
+                    <div class="col" role="listitem" tabindex="0" data-tip="@tip" aria-label="@tip">
+                        <div class="stack" style="--h:@Charts.Percent(total, max)">
+                            @for (var i = 0; i < column.Values.Count; i++)
+                            {
+                                if (column.Values[i] > 0)
+                                {
+                                    <i class="s@(i + 1)" style="--v:@column.Values[i].ToString(System.Globalization.CultureInfo.InvariantCulture)"></i>
+                                }
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-labels @(sparse ? "sparse" : null)" aria-hidden="true">
+        @foreach (var column in Model.Columns)
+        {
+            <span>@column.Label</span>
+        }
+    </div>
+    <details class="chart-table">
+        <summary>Show as table</summary>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Day</th>
+                        @foreach (var series in Model.Series)
+                        {
+                            <th class="num">@series</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var column in Model.Columns)
+                    {
+                        <tr>
+                            <td>@column.Label</td>
+                            @foreach (var value in column.Values)
+                            {
+                                <td class="num">@value.ToString("0")</td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </details>
+    }
+</figure>

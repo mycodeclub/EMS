@@ -445,6 +445,10 @@ namespace EMS.Data.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<decimal?>("MonthlySalary")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)");
+
                     b.Property<int>("OrganizationId")
                         .HasColumnType("integer");
 
@@ -891,6 +895,9 @@ namespace EMS.Data.Migrations
                         .HasMaxLength(15)
                         .HasColumnType("character varying(15)");
 
+                    b.Property<int?>("Industry")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
@@ -909,6 +916,15 @@ namespace EMS.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<DateTime?>("OnboardingCompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool?>("OperatesInShifts")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("OwnerUserId")
+                        .HasColumnType("text");
+
                     b.Property<string>("Phone")
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
@@ -916,6 +932,9 @@ namespace EMS.Data.Migrations
                     b.Property<string>("RegisteredName")
                         .HasMaxLength(250)
                         .HasColumnType("character varying(250)");
+
+                    b.Property<DateOnly?>("TrialEndsOn")
+                        .HasColumnType("date");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -925,6 +944,8 @@ namespace EMS.Data.Migrations
                         .HasColumnType("character varying(450)");
 
                     b.HasKey("UniqueId");
+
+                    b.HasIndex("OwnerUserId");
 
                     b.ToTable("Organizations");
                 });
@@ -1455,6 +1476,11 @@ namespace EMS.Data.Migrations
 
             modelBuilder.Entity("EMS.Models.Organization", b =>
                 {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.OwnsOne("EMS.Models.Common.Address", "Address", b1 =>
                         {
                             b1.Property<int>("OrganizationUniqueId")
@@ -1499,6 +1525,8 @@ namespace EMS.Data.Migrations
 
                     b.Navigation("Address")
                         .IsRequired();
+
+                    b.Navigation("Owner");
                 });
 
             modelBuilder.Entity("EMS.Models.Shift", b =>

@@ -1,0 +1,92 @@
+@model PayrollMonth
+@{
+    ViewData["Title"] = "Salary slips";
+    var gross = Model.Lines.Sum(l => l.Gross);
+    var net = Model.Lines.Sum(l => l.Earned);
+    var unmarked = Model.Lines.Sum(l => l.UnmarkedDays);
+    var missingSalary = Model.Lines.Count(l => l.Gross == 0);
+    List<EMS.Models.Admin.StatTile> stats =
+    [
+        new("Gross salaries", gross.ToRupees(), $"{Model.Lines.Count} employees"),
+        new("Loss of pay", (gross - net).ToRupees(), $"{Model.Lines.Sum(l => l.LossOfPayDays):0.#} unpaid days"),
+        new("Net payable", net.ToRupees()),
+        new("Days not marked", unmarked.ToString(), unmarked > 0 ? "Counted as unpaid" : "Attendance complete"),
+    ];
+}
+
+<header class="page-head">
+    <div>
+        <h1>Salary slips</h1>
+        <p>Monthly salary pro-rated by paid days from the attendance register.</p>
+    </div>
+    <partial name="_MonthNav" model="Model.First" />
+</header>
+
+@if (unmarked > 0)
+{
+    <p class="notice notice-warn" role="note">
+        @unmarked day@(unmarked == 1 ? " is" : "s are") not marked for @Model.First.ToString("MMMM") and counted as unpaid.
+        <a asp-controller="Attendance" asp-action="Index" asp-route-year="@Model.Year" asp-route-month="@Model.Month">Complete the attendance</a> for correct salaries.
+    </p>
+}
+@if (missingSalary > 0)
+{
+    <p class="notice" role="note">@missingSalary employee@(missingSalary == 1 ? " has" : "s have") no monthly salary set. Add it on their employee profile.</p>
+}
+
+<partial name="_Stats" model="stats" />
+
+<section class="card">
+    <div class="card-head">
+        <h2>@Model.First.ToString("MMMM yyyy")</h2>
+        <span>@DateTime.DaysInMonth(Model.Year, Model.Month) calendar days</span>
+    </div>
+    @if (Model.Lines.Count == 0)
+    {
+        <p class="empty">No employees were on the rolls this month.</p>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th class="num">Gross / month</th>
+                        <th class="num">Paid days</th>
+                        <th class="num">Loss of pay</th>
+                        <th class="num">Not marked</th>
+                        <th class="num">Net pay</th>
+                        <th><span class="sr-only">Slip</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var line in Model.Lines)
+                    {
+                        <tr>
+                            <td>@line.Employee.FullName<small>@line.Employee.EmpCode · @line.Employee.Designation</small></td>
+                            <td class="num">@(line.Gross == 0 ? "—" : line.Gross.ToRupees())</td>
+                            <td class="num">@line.PaidDays.ToString("0.#") <small>of @line.EmployedDays</small></td>
+                            <td class="num">@line.LossOfPayDays.ToString("0.#") days<small>@line.Deduction.ToRupees()</small></td>
+                            <td class="num @(line.UnmarkedDays > 0 ? "late" : null)">@line.UnmarkedDays</td>
+                            <td class="num"><b>@line.Earned.ToRupees()</b></td>
+                            <td class="num"><a class="btn btn-secondary btn-sm" asp-action="Slip" asp-route-id="@line.Employee.UniqueId" asp-route-year="@Model.Year" asp-route-month="@Model.Month">View slip</a></td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td>Total</td>
+                        <td class="num">@gross.ToRupees()</td>
+                        <td></td>
+                        <td class="num">@((gross - net).ToRupees())</td>
+                        <td class="num">@unmarked</td>
+                        <td class="num">@net.ToRupees()</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    }
+</section>
+<p style="font-size:12px;color:var(--muted)">Statutory deductions (PF, ESI, professional tax, TDS) are not applied yet.</p>

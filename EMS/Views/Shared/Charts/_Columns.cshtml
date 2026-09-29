@@ -1,0 +1,43 @@
+@using EMS.Models.Common
+@model ColumnChart
+@{
+    var max = Model.Max;
+    var sparse = Model.Points.Count > 10;
+}
+<figure class="card chart">
+    <figcaption class="chart-head">
+        <div>
+            <h2>@Model.Title</h2>
+            @if (Model.Subtitle is not null)
+            {
+                <p>@Model.Subtitle</p>
+            }
+        </div>
+    </figcaption>
+    <div class="plot">
+        <div class="plot-axis" aria-hidden="true">
+            @foreach (var f in new[] { 0m, 0.5m, 1m })
+            {
+                <span style="bottom:@Charts.Percent(f, 1)">@Model.FormatAxis(max * f)</span>
+            }
+        </div>
+        <div class="plot-area">
+            <div class="gridline" style="top:0"></div>
+            <div class="gridline" style="top:50%"></div>
+            <div class="cols" role="list">
+                @foreach (var point in Model.Points)
+                {
+                    <div class="col" role="listitem" tabindex="0" data-tip="@point.Display" aria-label="@point.Display">
+                        <i style="--h:@Charts.Percent(point.Value, max)"></i>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-labels @(sparse ? "sparse" : null)" aria-hidden="true">
+        @foreach (var point in Model.Points)
+        {
+            <span>@point.Label</span>
+        }
+    </div>
+</figure>

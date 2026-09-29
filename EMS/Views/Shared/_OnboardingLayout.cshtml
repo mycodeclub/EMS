@@ -1,0 +1,39 @@
+@using Microsoft.Extensions.Options
+@using EMS.Models.Landing
+@inject IOptions<CompanyOptions> CompanyOptions
+@{
+    // Layout for the first-time setup wizard of a new customer (OnboardingController).
+    var company = CompanyOptions.Value;
+    var title = ViewData["Title"] as string;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>@(title is null ? "Set up" : title) — @company.ProductName</title>
+    <meta name="robots" content="noindex" />
+    <link rel="icon" href="~/img/logo.svg" type="image/svg+xml" />
+    <link rel="alternate icon" href="~/favicon.ico" />
+    <link rel="stylesheet" href="~/css/brand.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/console.css" asp-append-version="true" />
+</head>
+<body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="wizard-top">
+        <div class="wizard-bar">
+            <a class="side-brand" href="~/">
+                <img src="~/img/logo.svg" alt="" width="28" height="28" />
+                <div><b>@company.ProductName</b><span>@(ViewData["Organization"] as string ?? "Setup")</span></div>
+            </a>
+            <form method="post" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Content("~/")">
+                <button type="submit" class="btn btn-secondary btn-sm">Sign out</button>
+            </form>
+        </div>
+    </header>
+    <main id="main" class="wizard">
+        @RenderBody()
+    </main>
+    <script src="~/js/console.js" asp-append-version="true"></script>
+</body>
+</html>

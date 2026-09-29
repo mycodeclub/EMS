@@ -16,8 +16,11 @@ public static class IdentitySeeder
         var users = provider.GetRequiredService<UserManager<IdentityUser>>();
         var admin = provider.GetRequiredService<IOptions<SuperAdminOptions>>().Value;
 
-        if (!await roles.RoleExistsAsync(AppRoles.SuperAdmin))
-            EnsureSucceeded(await roles.CreateAsync(new IdentityRole(AppRoles.SuperAdmin)), "create the SuperAdmin role");
+        foreach (var role in new[] { AppRoles.SuperAdmin, AppRoles.OrgAdmin })
+        {
+            if (!await roles.RoleExistsAsync(role))
+                EnsureSucceeded(await roles.CreateAsync(new IdentityRole(role)), $"create the {role} role");
+        }
 
         if (string.IsNullOrWhiteSpace(admin.Email) || string.IsNullOrWhiteSpace(admin.Password))
         {

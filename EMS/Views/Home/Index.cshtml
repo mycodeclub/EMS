@@ -74,6 +74,10 @@
             {
                 <a asp-controller="Admin" asp-action="Index">Admin</a>
             }
+            @if (User.IsInRole(EMS.Models.Common.AppRoles.OrgAdmin))
+            {
+                <a asp-controller="Onboarding" asp-action="Index">My organization</a>
+            }
             @if (User.Identity?.IsAuthenticated == true)
             {
                 <a asp-area="Identity" asp-page="/Account/Manage/Index">My account</a>

@@ -1,0 +1,85 @@
+@model EmployeesInput
+@{
+    ViewData["Title"] = "Employees";
+    var shifts = ViewData["ShiftOptions"] as List<EMS.Models.Shift> ?? [];
+    var nextCode = ViewData["NextCode"] as string;
+    var today = DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd");
+}
+
+<partial name="_Stepper" />
+
+<h1>Add your employees</h1>
+<p class="lead">Add a few now, or all of them later from Employees. Rows without a first name are ignored. Leave the code empty to number them automatically (@nextCode, …).</p>
+
+<form asp-action="Employees" method="post" novalidate>
+    <div asp-validation-summary="ModelOnly" class="alert alert-error"></div>
+    <section class="card">
+        <div class="table-wrap">
+            <table class="editor" id="employee-rows" data-rows="employee-row" data-prefix="Rows">
+                <thead>
+                    <tr>
+                        <th>Code</th><th>First name</th><th>Last name</th><th>Mobile</th><th>Designation</th>
+                        <th>Joined on</th><th>Shift</th><th>Monthly salary (₹)</th><th><span class="sr-only">Remove</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (var i = 0; i < Model.Rows.Count; i++)
+                    {
+                        <tr>
+                            <td><input asp-for="Rows[i].EmpCode" class="w-sm" placeholder="Auto" aria-label="Employee code" /></td>
+                            <td><input asp-for="Rows[i].FirstName" aria-label="First name" /></td>
+                            <td><input asp-for="Rows[i].LastName" aria-label="Last name" /></td>
+                            <td><input asp-for="Rows[i].Mobile" type="tel" aria-label="Mobile" /></td>
+                            <td><input asp-for="Rows[i].Designation" aria-label="Designation" /></td>
+                            <td>
+                                <input asp-for="Rows[i].DateOfJoining" type="date" value="@(Model.Rows[i].DateOfJoining?.ToString("yyyy-MM-dd") ?? today)" aria-label="Joined on" />
+                                <span asp-validation-for="Rows[i].DateOfJoining"></span>
+                            </td>
+                            <td>
+                                <select asp-for="Rows[i].ShiftId" aria-label="Shift">
+                                    @foreach (var shift in shifts)
+                                    {
+                                        <option value="@shift.UniqueId" selected="@(Model.Rows[i].ShiftId == shift.UniqueId)">@shift.Name</option>
+                                    }
+                                </select>
+                            </td>
+                            <td><input asp-for="Rows[i].MonthlySalary" type="number" min="0" step="100" class="w-sm" aria-label="Monthly salary" /></td>
+                            <td class="num"><button type="button" class="btn btn-danger btn-sm" data-remove-row>Remove</button></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="card-body">
+            <button type="button" class="btn btn-secondary btn-sm" data-add-row="employee-rows">+ Add a row</button>
+        </div>
+    </section>
+
+    <template id="employee-row">
+        <tr>
+            <td><input name="Rows[0].EmpCode" type="text" class="w-sm" placeholder="Auto" aria-label="Employee code" /></td>
+            <td><input name="Rows[0].FirstName" type="text" aria-label="First name" /></td>
+            <td><input name="Rows[0].LastName" type="text" aria-label="Last name" /></td>
+            <td><input name="Rows[0].Mobile" type="tel" aria-label="Mobile" /></td>
+            <td><input name="Rows[0].Designation" type="text" aria-label="Designation" /></td>
+            <td><input name="Rows[0].DateOfJoining" type="date" value="@today" aria-label="Joined on" /></td>
+            <td>
+                <select name="Rows[0].ShiftId" aria-label="Shift">
+                    @foreach (var shift in shifts)
+                    {
+                        <option value="@shift.UniqueId">@shift.Name</option>
+                    }
+                </select>
+            </td>
+            <td><input name="Rows[0].MonthlySalary" type="number" min="0" step="100" class="w-sm" aria-label="Monthly salary" /></td>
+            <td class="num"><button type="button" class="btn btn-danger btn-sm" data-remove-row>Remove</button></td>
+        </tr>
+    </template>
+
+    <div class="form-actions">
+        <button type="submit" class="btn">Save employees &amp; finish setup</button>
+        <a class="btn btn-ghost" asp-action="Shifts">Back</a>
+        <span class="spacer"></span>
+        <button type="submit" name="skip" value="true" class="btn btn-secondary" formnovalidate>Skip for now</button>
+    </div>
+</form>

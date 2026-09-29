@@ -1,0 +1,13 @@
+@using EMS.Services.Onboarding
+@model OnboardingStep
+@{
+    var (text, badge) = Model switch
+    {
+        OnboardingStep.Password => ("Invited — not signed in yet", "badge-orange"),
+        OnboardingStep.Profile => ("Completing profile", "badge-blue"),
+        OnboardingStep.Shifts => ("Setting up shifts", "badge-blue"),
+        OnboardingStep.Employees => ("Adding employees", "badge-indigo"),
+        _ => ("Setup finished", "badge-green"),
+    };
+}
+<span class="badge @badge">@text</span>

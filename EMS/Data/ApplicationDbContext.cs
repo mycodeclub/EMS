@@ -41,7 +41,12 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     {
         base.OnModelCreating(builder);
 
-        builder.Entity<Organization>().OwnsOne(o => o.Address);
+        builder.Entity<Organization>(o =>
+        {
+            o.OwnsOne(x => x.Address);
+            o.HasOne(x => x.Owner).WithMany().HasForeignKey(x => x.OwnerUserId);
+            o.HasIndex(x => x.OwnerUserId);
+        });
         builder.Entity<Branch>(b =>
         {
             b.OwnsOne(x => x.Address);
@@ -59,6 +64,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             e.HasIndex(x => x.UserId).IsUnique().HasFilter($"\"UserId\" IS NOT NULL AND {NotDeleted}");
             e.HasOne(x => x.ReportingManager).WithMany().HasForeignKey(x => x.ReportingManagerId);
             e.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId);
+            e.Property(x => x.MonthlySalary).HasPrecision(12, 2);
         });
 
         builder.Entity<LeaveType>().HasIndex(l => new { l.OrganizationId, l.Code }).IsUnique().HasFilter(NotDeleted);

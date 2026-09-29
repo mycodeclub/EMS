@@ -1,0 +1,96 @@
+@model AttendanceSheet
+@{
+    ViewData["Title"] = "Attendance";
+    var today = DateOnly.FromDateTime(DateTime.Today);
+    var days = Enumerable.Range(1, Model.DaysInMonth).Select(d => new DateOnly(Model.Year, Model.Month, d)).ToList();
+    // Weekly off for "fill": Sundays for day-shift businesses; 24x7 businesses fill every day as present.
+    var weekendFill = Model.RoundTheClock ? (int)AttendanceStatus.Present : (int)AttendanceStatus.WeeklyOff;
+}
+
+<header class="page-head">
+    <div>
+        <h1>Attendance</h1>
+        <p>Mark each day for every employee. Earlier months can be filled in or corrected; future days are locked.</p>
+    </div>
+    <partial name="_MonthNav" model="Model.First" />
+</header>
+
+@if (Model.Employees.Count == 0)
+{
+    <section class="card">
+        <div class="empty">
+            <p>No employees were on the rolls in @Model.First.ToString("MMMM yyyy").</p>
+            <p><a class="btn btn-sm" asp-controller="Employees" asp-action="Create">Add employee</a></p>
+        </div>
+    </section>
+}
+else
+{
+    <form method="post" asp-route-year="@Model.Year" asp-route-month="@Model.Month">
+        <section class="card">
+            <div class="card-head">
+                <ul class="key" aria-label="Codes">
+                    @foreach (var (_, code, name) in AttendanceSheet.Codes)
+                    {
+                        <li><b>@code</b> @name</li>
+                    }
+                </ul>
+                <span>@Model.Employees.Count employee@(Model.Employees.Count == 1 ? "" : "s")</span>
+            </div>
+            <div class="table-wrap">
+                <table class="register">
+                    <thead>
+                        <tr>
+                            <th class="who">Employee</th>
+                            @foreach (var day in days)
+                            {
+                                var weekend = day.DayOfWeek is DayOfWeek.Sunday;
+                                <th class="@(weekend ? "we" : null)" title="@day.ToString("dddd dd MMM")">@day.Day<br />@day.ToString("ddd")[..2]</th>
+                            }
+                            <th class="num" title="Paid days so far">Paid</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var employee in Model.Employees)
+                        {
+                            var range = PayrollCalculator.EmployedRange(employee, Model.Year, Model.Month);
+                            decimal paid = 0;
+                            <tr>
+                                <td class="who">@employee.FullName<small>@employee.EmpCode · @(employee.Shift?.Name ?? "No fixed shift")</small></td>
+                                @foreach (var day in days)
+                                {
+                                    var open = range is { } r && day >= r.From && day <= r.To && day <= today;
+                                    if (!open)
+                                    {
+                                        <td class="off" title="@(day > today ? "Future day" : "Not on the rolls")">·</td>
+                                        continue;
+                                    }
+                                    var has = Model.Marks.TryGetValue((employee.UniqueId, day.Day), out var status);
+                                    if (has) { paid += PayrollCalculator.PaidWeight(status); }
+                                    <td>
+                                        <select name="m@(employee.UniqueId)_@day.Day" aria-label="@employee.FullName, @day.ToString("dd MMM")" data-weekend="@(day.DayOfWeek == DayOfWeek.Sunday ? "" : null)">
+                                            <option value=""></option>
+                                            @foreach (var (value, code, name) in AttendanceSheet.Codes)
+                                            {
+                                                <option value="@((int)value)" selected="@(has && status == value)" title="@name">@code</option>
+                                            }
+                                        </select>
+                                    </td>
+                                }
+                                <td class="num"><b>@paid.ToString("0.#")</b></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="sticky-actions">
+                <button type="button" class="btn btn-secondary btn-sm" data-fill="@((int)AttendanceStatus.Present)" data-fill-weekend="@weekendFill">
+                    Fill empty days: Present@(Model.RoundTheClock ? "" : ", Sundays off")
+                </button>
+                <span class="hint" style="font-size:12px;color:var(--muted)">Then change the exceptions (absent, leave, half day) and save.</span>
+                <span class="spacer"></span>
+                <button type="submit" class="btn">Save attendance</button>
+            </div>
+        </section>
+    </form>
+}

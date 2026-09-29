@@ -61,6 +61,10 @@ public class Employee : AuditableEntity
 
     public EmployeeStatus Status { get; set; } = EmployeeStatus.Active;
 
+    /// <summary>Gross monthly salary in rupees; salary slips pro-rate it by paid days.</summary>
+    [Range(0, 10_000_000), Display(Name = "Monthly salary")]
+    public decimal? MonthlySalary { get; set; }
+
     [NotMapped]
     public string FullName => string.Join(" ", new[] { FirstName, MiddleName, LastName }.Where(n => !string.IsNullOrWhiteSpace(n)));
 

@@ -1,0 +1,18 @@
+@model ShiftsInput
+@{
+    ViewData["Title"] = "Shifts";
+}
+
+<partial name="_Stepper" />
+
+<h1>How does your team work?</h1>
+<p class="lead">Set up your shift timings. Attendance uses them to mark late arrivals, half days and night shifts correctly.</p>
+
+<form asp-action="Shifts" method="post" novalidate data-multi="@(Model.OperatesInShifts?.ToString().ToLowerInvariant())">
+    <div asp-validation-summary="ModelOnly" class="alert alert-error"></div>
+    <partial name="_ShiftEditor" model="Model" />
+    <div class="form-actions">
+        <button type="submit" class="btn">Save shifts &amp; continue</button>
+        <a class="btn btn-ghost" asp-action="Profile">Back</a>
+    </div>
+</form>

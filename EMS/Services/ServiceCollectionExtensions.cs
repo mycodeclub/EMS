@@ -1,4 +1,7 @@
 using EMS.Services.Common;
+using EMS.Services.Email;
+using EMS.Services.Onboarding;
+using Microsoft.AspNetCore.Identity.UI.Services;
 
 namespace EMS.Services;
 
@@ -9,6 +12,10 @@ public static class ServiceCollectionExtensions
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped(typeof(ICrudService<>), typeof(CrudService<>));
+        services.AddTransient<IEmailSender, EmailSender>();
+        services.AddScoped<OrganizationContext>();
+        services.AddScoped<SetupService>();
+        services.AddScoped<TrialService>();
         return services;
     }
 }

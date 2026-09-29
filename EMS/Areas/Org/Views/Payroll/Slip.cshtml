@@ -1,0 +1,74 @@
+@model PayLine
+@{
+    var organization = (Organization)ViewData["Organization"]!;
+    var employee = Model.Employee;
+    var period = new DateOnly(Model.Year, Model.Month, 1);
+    ViewData["Title"] = $"Salary slip {employee.EmpCode} {period:MMM yyyy}";
+    var address = string.Join(", ", new[] { organization.Address.Line1, organization.Address.Line2, organization.Address.City, organization.Address.State, organization.Address.PinCode }
+        .Where(p => !string.IsNullOrWhiteSpace(p)));
+}
+
+<div class="page-head no-print">
+    <a class="btn btn-ghost" asp-action="Index" asp-route-year="@Model.Year" asp-route-month="@Model.Month">‹ All salary slips</a>
+    <div class="page-actions">
+        <button type="button" class="btn" onclick="window.print()">Print / save as PDF</button>
+    </div>
+</div>
+
+<article class="card slip">
+    <header class="slip-head">
+        <div>
+            <h2>@organization.Name</h2>
+            <p>@address</p>
+            @if (organization.GstNumber is not null)
+            {
+                <p>GSTIN @organization.GstNumber</p>
+            }
+        </div>
+        <div class="slip-title">
+            <b>Salary slip</b>
+            <p>@period.ToString("MMMM yyyy")</p>
+        </div>
+    </header>
+
+    <dl class="slip-meta">
+        <div><span>Employee</span><b>@employee.FullName</b></div>
+        <div><span>Employee code</span><b>@employee.EmpCode</b></div>
+        <div><span>Designation</span><b>@(employee.Designation ?? "—")</b></div>
+        <div><span>Department</span><b>@(employee.Department ?? "—")</b></div>
+        <div><span>Date of joining</span><b>@employee.DateOfJoining.ToShortDate()</b></div>
+        <div><span>Shift</span><b>@(employee.Shift?.Name ?? "—")</b></div>
+        <div><span>Calendar days</span><b>@Model.DaysInMonth</b></div>
+        <div><span>Paid days</span><b>@Model.PaidDays.ToString("0.#")</b></div>
+    </dl>
+
+    <table>
+        <thead>
+            <tr><th>Attendance</th><th class="num">Days</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var (status, _, name) in EMS.Areas.Org.Models.AttendanceSheet.Codes)
+            {
+                <tr><td>@name</td><td class="num">@Model.Counts.GetValueOrDefault(status)</td></tr>
+            }
+            <tr><td>Not marked (unpaid)</td><td class="num">@Model.UnmarkedDays</td></tr>
+        </tbody>
+    </table>
+
+    <table style="margin-top:16px">
+        <thead>
+            <tr><th>Earnings &amp; deductions</th><th class="num">Amount</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Gross monthly salary</td><td class="num">@Model.Gross.ToRupees()</td></tr>
+            <tr><td>Less: loss of pay (@Model.LossOfPayDays.ToString("0.#") day@(Model.LossOfPayDays == 1 ? "" : "s"))</td><td class="num">− @Model.Deduction.ToRupees()</td></tr>
+        </tbody>
+    </table>
+
+    <div class="slip-net"><span>Net pay</span><b>@Model.Earned.ToRupees()</b></div>
+
+    <p class="slip-foot">
+        Net pay = gross × paid days ÷ @Model.DaysInMonth calendar days. Statutory deductions (PF, ESI, professional tax, TDS) are not included.
+        This is a computer-generated slip and does not need a signature.
+    </p>
+</article>

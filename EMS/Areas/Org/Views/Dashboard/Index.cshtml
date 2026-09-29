@@ -1,0 +1,81 @@
+@model OrgDashboard
+@{
+    ViewData["Title"] = "Dashboard";
+    var welcome = TempData["Welcome"] is string;
+    List<EMS.Models.Admin.StatTile> stats =
+    [
+        new("Staff on the rolls", Model.Staff.ToString(), Model.Staff == 0 ? "Add your first employee" : null),
+        new("Present today", Model.PresentToday.ToString(), Model.Staff > 0 ? $"{Model.PresentToday * 100 / Model.Staff}% of staff" : null),
+        new("Absent today", Model.AbsentToday.ToString()),
+        new("Not marked today", Model.UnmarkedToday.ToString(), Model.UnmarkedToday > 0 ? "Mark them in Attendance" : "All marked"),
+    ];
+}
+
+@if (welcome)
+{
+    <p class="alert alert-success" role="status">You're all set. Next: mark attendance, and salary slips follow from it each month.</p>
+}
+<partial name="_TrialBanner" />
+
+<header class="page-head">
+    <div>
+        <h1>Dashboard</h1>
+        <p>Today is @DateTime.Today.ToString("dddd, dd MMMM yyyy").</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-secondary" asp-controller="Employees" asp-action="Create">Add employee</a>
+        <a class="btn" asp-controller="Attendance" asp-action="Index">Mark attendance</a>
+    </div>
+</header>
+
+<partial name="_Stats" model="stats" />
+
+@if (Model.Staff == 0)
+{
+    <section class="card">
+        <div class="empty">
+            <p>No employees yet. Add your team to start marking attendance and generating salary slips.</p>
+            <p><a class="btn" asp-controller="Employees" asp-action="Create">Add employee</a></p>
+        </div>
+    </section>
+}
+else
+{
+    <div class="grid-3-1">
+        <partial name="Charts/_Stacked" model="Model.Attendance" />
+        <partial name="Charts/_Bars" model="Model.ByShift" />
+    </div>
+
+    <div class="grid-3-1">
+        <section class="card">
+            <div class="card-head">
+                <h2>Newest employees</h2>
+                <a asp-controller="Employees" asp-action="Index">All employees</a>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Employee</th><th>Designation</th><th>Shift</th><th>Joined</th></tr></thead>
+                    <tbody>
+                        @foreach (var e in Model.RecentJoiners)
+                        {
+                            <tr>
+                                <td><a asp-controller="Employees" asp-action="Edit" asp-route-id="@e.UniqueId">@e.FullName</a><small>@e.EmpCode</small></td>
+                                <td>@e.Designation</td>
+                                <td>@(e.Shift?.Name ?? "—")</td>
+                                <td>@e.DateOfJoining.ToShortDate()</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        <section class="card">
+            <div class="card-head"><h2>Payroll this month</h2></div>
+            <div class="card-body">
+                <p style="font-size:30px;font-weight:700;letter-spacing:-.04em">@Model.MonthlyPayroll.ToRupees()</p>
+                <p style="color:var(--muted);font-size:13px;margin-top:4px">Gross monthly salaries of staff on the rolls, before loss-of-pay days.</p>
+                <p style="margin-top:14px"><a class="btn btn-secondary btn-sm" asp-controller="Payroll" asp-action="Index">Salary slips</a></p>
+            </div>
+        </section>
+    </div>
+}

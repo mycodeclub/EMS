@@ -105,7 +105,7 @@ public class CrudService<T>(ApplicationDbContext db, ILogger<CrudService<T>> log
 
     private static string NotFound(int id) => $"{typeof(T).Name} #{id} was not found.";
 
-    // SQLite: "UNIQUE constraint failed"; SQL Server: errors 2601 / 2627 ("Cannot insert duplicate key").
+    // PostgreSQL: 23505 "duplicate key value violates unique constraint"; SQLite: "UNIQUE constraint failed".
     private static bool IsUniqueViolation(DbUpdateException ex) =>
         ex.InnerException?.Message is { } message
         && (message.Contains("UNIQUE constraint failed", StringComparison.OrdinalIgnoreCase)

@@ -1,12 +1,16 @@
-@model AdminList<EnquiryRow>
+@model OfferableList<EnquiryRow>
 @{
     ViewData["Title"] = "Enquiries";
 }
 
 <header class="page-head">
-    <h1>Enquiries</h1>
-    <p>Free-trial, demo and pricing requests from the website contact form.</p>
+    <div>
+        <h1>Enquiries</h1>
+        <p>Free-trial, demo and pricing requests from the website contact form.</p>
+    </div>
 </header>
+
+<partial name="_SampleNotice" />
 
 <partial name="_Stats" model="Model.Stats" />
 
@@ -25,6 +29,7 @@
                     <th>Team size</th>
                     <th>Interested in</th>
                     <th>Status</th>
+                    <th><span class="sr-only">Actions</span></th>
                 </tr>
             </thead>
             <tbody>
@@ -44,6 +49,7 @@
                         <td>@row.TeamSize.DisplayName()</td>
                         <td>@row.Interest.DisplayName()</td>
                         <td><span class="badge @badge">@row.Status.DisplayName()</span></td>
+                        <td class="num"><partial name="_OfferAction" model="(row.Email, Model.OfferedEmails)" /></td>
                     </tr>
                 }
             </tbody>

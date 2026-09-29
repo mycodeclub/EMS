@@ -119,11 +119,14 @@ namespace EMS.Areas.Identity.Pages.Account
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User logged in.");
-                    // Super admins go to the admin console unless they were sent to sign in from a specific page.
-                    if (defaultReturnUrl && await _userManager.FindByEmailAsync(Input.Email) is { } user
-                        && await _userManager.IsInRoleAsync(user, AppRoles.SuperAdmin))
+                    // Staff go to their console unless they were sent to sign in from a specific page:
+                    // super admins to the admin console, customer owners to onboarding (which forwards to their panel once set up).
+                    if (defaultReturnUrl && await _userManager.FindByEmailAsync(Input.Email) is { } user)
                     {
-                        return RedirectToAction("Index", "Admin", new { area = "" });
+                        if (await _userManager.IsInRoleAsync(user, AppRoles.SuperAdmin))
+                            return RedirectToAction("Index", "Admin", new { area = "" });
+                        if (await _userManager.IsInRoleAsync(user, AppRoles.OrgAdmin))
+                            return RedirectToAction("Index", "Onboarding", new { area = "" });
                     }
                     return LocalRedirect(returnUrl);
                 }

@@ -1,19 +1,76 @@
-@model AdminList<CustomerRow>
+@model CustomersPage
 @{
-    ViewData["Title"] = "Active customers";
+    ViewData["Title"] = "Customers & trials";
 }
 
 <header class="page-head">
-    <h1>Active customers</h1>
-    <p>Organizations using EMS today, their plan and renewal date.</p>
+    <div>
+        <h1>Customers &amp; trials</h1>
+        <p>Organizations on a free trial, and the customers using EMS today.</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn" asp-action="OfferTrial">Offer a free trial</a>
+    </div>
 </header>
 
-<partial name="_Stats" model="Model.Stats" />
+<section class="card">
+    <div class="card-head">
+        <h2>Free trials</h2>
+        <span>@Model.Trials.Count organization@(Model.Trials.Count == 1 ? "" : "s") · live data</span>
+    </div>
+    @if (Model.Trials.Count == 0)
+    {
+        <div class="empty">
+            <p>No free trials yet. Offer one from a lead or enquiry, or start one directly.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Organization</th>
+                        <th>Owner login</th>
+                        <th>Offered</th>
+                        <th>Trial ends</th>
+                        <th class="num">Employees</th>
+                        <th>Onboarding</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var trial in Model.Trials)
+                    {
+                        var today = DateOnly.FromDateTime(DateTime.Today);
+                        <tr>
+                            <td>@trial.Organization<small>@trial.Industry?.DisplayName()</small></td>
+                            <td>@trial.OwnerEmail</td>
+                            <td>@trial.OfferedAt.ToLocalTime().ToShortDate()</td>
+                            <td class="@(trial.TrialEndsOn < today ? "late" : null)">
+                                @trial.TrialEndsOn?.ToShortDate()
+                                @if (trial.TrialEndsOn is { } ends)
+                                {
+                                    <small>@(ends < today ? "Expired" : $"{ends.DayNumber - today.DayNumber} days left")</small>
+                                }
+                            </td>
+                            <td class="num">@trial.Employees</td>
+                            <td><partial name="_TrialStep" model="trial.Step" /></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+<h2 class="form-section">Paying customers</h2>
+<partial name="_SampleNotice" />
+<partial name="_Stats" model="Model.Sample.Stats" />
 
 <section class="card">
     <div class="card-head">
         <h2>Customers</h2>
-        <span>@Model.Rows.Count organizations</span>
+        <span>@Model.Sample.Rows.Count organizations</span>
     </div>
     <div class="table-wrap">
         <table>
@@ -30,7 +87,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var row in Model.Rows.OrderByDescending(r => r.MonthlyValue))
+                @foreach (var row in Model.Sample.Rows.OrderByDescending(r => r.MonthlyValue))
                 {
                     var badge = row.Health switch
                     {
