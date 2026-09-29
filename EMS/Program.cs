@@ -16,7 +16,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+    .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
+builder.Services.Configure<SuperAdminOptions>(builder.Configuration.GetSection(SuperAdminOptions.Section));
 builder.Services.AddControllersWithViews();
 builder.Services.Configure<CompanyOptions>(builder.Configuration.GetSection(CompanyOptions.Section));
 
@@ -37,6 +39,8 @@ builder.Services.AddRateLimiter(options =>
 });
 
 var app = builder.Build();
+
+await app.Services.SeedIdentityAsync();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

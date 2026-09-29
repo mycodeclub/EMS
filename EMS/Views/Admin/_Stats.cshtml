@@ -1,0 +1,15 @@
+@model IReadOnlyList<StatTile>
+
+<dl class="stats">
+    @foreach (var stat in Model)
+    {
+        <div class="stat">
+            <dt>@stat.Label</dt>
+            <dd>@stat.Value</dd>
+            @if (stat.Note is not null)
+            {
+                <small>@stat.Note</small>
+            }
+        </div>
+    }
+</dl>

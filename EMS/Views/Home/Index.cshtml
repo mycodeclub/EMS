@@ -70,6 +70,10 @@
             <a href="#pricing">Pricing</a>
             <a href="#faq">FAQ</a>
             <a href="#contact">Contact</a>
+            @if (User.IsInRole(EMS.Models.Common.AppRoles.SuperAdmin))
+            {
+                <a asp-controller="Admin" asp-action="Index">Admin</a>
+            }
             @if (User.Identity?.IsAuthenticated == true)
             {
                 <a asp-area="Identity" asp-page="/Account/Manage/Index">My account</a>

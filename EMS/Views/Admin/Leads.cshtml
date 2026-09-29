@@ -1,0 +1,64 @@
+@model AdminList<LeadRow>
+@{
+    ViewData["Title"] = "Leads";
+    var today = DateOnly.FromDateTime(DateTime.Today);
+}
+
+<header class="page-head">
+    <h1>Leads</h1>
+    <p>Qualified prospects in the sales pipeline, with the next follow-up.</p>
+</header>
+
+<partial name="_Stats" model="Model.Stats" />
+
+<section class="card">
+    <div class="card-head">
+        <h2>Pipeline</h2>
+        <span>@Model.Rows.Count open leads</span>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Organization</th>
+                    <th>Contact</th>
+                    <th>Stage</th>
+                    <th class="num">Employees</th>
+                    <th class="num">Offices</th>
+                    <th class="num">Est. value / month</th>
+                    <th>Owner</th>
+                    <th>Next follow-up</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Rows.OrderBy(r => r.NextFollowUp))
+                {
+                    var badge = row.Stage switch
+                    {
+                        LeadStage.New => "badge-blue",
+                        LeadStage.DemoScheduled => "badge-indigo",
+                        LeadStage.ProposalSent or LeadStage.Negotiation => "badge-green",
+                        _ => "",
+                    };
+                    var missed = row.NextFollowUp < today;
+                    <tr>
+                        <td>@row.Organization<small>@row.Industry.DisplayName()</small></td>
+                        <td>@row.ContactName<small><a href="mailto:@row.Email">@row.Email</a></small></td>
+                        <td><span class="badge @badge">@row.Stage.DisplayName()</span></td>
+                        <td class="num">@row.Employees</td>
+                        <td class="num">@row.Offices</td>
+                        <td class="num">@row.MonthlyValue.ToRupees()</td>
+                        <td>@row.Owner</td>
+                        <td class="@(missed ? "late" : null)">
+                            @(row.NextFollowUp == today ? "Today" : row.NextFollowUp.ToShortDate())
+                            @if (missed)
+                            {
+                                <small>Missed</small>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

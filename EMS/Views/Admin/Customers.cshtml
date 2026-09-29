@@ -1,0 +1,55 @@
+@model AdminList<CustomerRow>
+@{
+    ViewData["Title"] = "Active customers";
+}
+
+<header class="page-head">
+    <h1>Active customers</h1>
+    <p>Organizations using EMS today, their plan and renewal date.</p>
+</header>
+
+<partial name="_Stats" model="Model.Stats" />
+
+<section class="card">
+    <div class="card-head">
+        <h2>Customers</h2>
+        <span>@Model.Rows.Count organizations</span>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Organization</th>
+                    <th>Plan</th>
+                    <th class="num">Offices</th>
+                    <th class="num">Employees</th>
+                    <th>Customer since</th>
+                    <th>Renews on</th>
+                    <th class="num">Monthly value</th>
+                    <th>Health</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Rows.OrderByDescending(r => r.MonthlyValue))
+                {
+                    var badge = row.Health switch
+                    {
+                        CustomerHealth.Healthy => "badge-green",
+                        CustomerHealth.Onboarding => "badge-blue",
+                        _ => "badge-orange",
+                    };
+                    <tr>
+                        <td>@row.Organization<small>@row.City · @row.Industry.DisplayName()</small></td>
+                        <td>@row.Plan</td>
+                        <td class="num">@row.Offices</td>
+                        <td class="num">@row.Employees.ToString("N0")</td>
+                        <td>@row.CustomerSince.ToShortDate()</td>
+                        <td>@row.RenewsOn.ToShortDate()</td>
+                        <td class="num">@(row.MonthlyValue == 0 ? "Free trial" : row.MonthlyValue.ToRupees())</td>
+                        <td><span class="badge @badge">@row.Health.DisplayName()</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
