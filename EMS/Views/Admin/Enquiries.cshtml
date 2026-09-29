@@ -10,8 +10,6 @@
     </div>
 </header>
 
-<partial name="_SampleNotice" />
-
 <partial name="_Stats" model="Model.Stats" />
 
 <section class="card">
@@ -19,40 +17,49 @@
         <h2>Latest enquiries</h2>
         <span>@Model.Rows.Count enquiries</span>
     </div>
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Received</th>
-                    <th>Contact</th>
-                    <th>Organization</th>
-                    <th>Team size</th>
-                    <th>Interested in</th>
-                    <th>Status</th>
-                    <th><span class="sr-only">Actions</span></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var row in Model.Rows)
-                {
-                    var badge = row.Status switch
-                    {
-                        EnquiryStatus.New => "badge-blue",
-                        EnquiryStatus.Contacted => "badge-orange",
-                        EnquiryStatus.Converted => "badge-green",
-                        _ => "",
-                    };
+    @if (Model.Rows.Count == 0)
+    {
+        <div class="empty">
+            <p>No enquiries yet. They appear here when someone submits the contact form on the website.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table>
+                <thead>
                     <tr>
-                        <td>@row.ReceivedAt.ToShortDate()<small>@row.ReceivedAt.ToString("h:mm tt")</small></td>
-                        <td>@row.Name<small><a href="mailto:@row.Email">@row.Email</a> · @row.Phone</small></td>
-                        <td>@row.Organization<small>@row.Industry.DisplayName()</small></td>
-                        <td>@row.TeamSize.DisplayName()</td>
-                        <td>@row.Interest.DisplayName()</td>
-                        <td><span class="badge @badge">@row.Status.DisplayName()</span></td>
-                        <td class="num"><partial name="_OfferAction" model="(row.Email, Model.OfferedEmails)" /></td>
+                        <th>Received</th>
+                        <th>Contact</th>
+                        <th>Organization</th>
+                        <th>Team size</th>
+                        <th>Interested in</th>
+                        <th>Status</th>
+                        <th><span class="sr-only">Actions</span></th>
                     </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+                </thead>
+                <tbody>
+                    @foreach (var row in Model.Rows)
+                    {
+                        var badge = row.Status switch
+                        {
+                            EnquiryStatus.New => "badge-blue",
+                            EnquiryStatus.Contacted => "badge-orange",
+                            EnquiryStatus.Converted => "badge-green",
+                            _ => "",
+                        };
+                        <tr>
+                            <td>@row.ReceivedAt.ToShortDate()<small>@row.ReceivedAt.ToString("h:mm tt")</small></td>
+                            <td>@row.Name<small><a href="mailto:@row.Email">@row.Email</a> · @row.Phone</small></td>
+                            <td>@row.Organization<small>@row.Industry.DisplayName()</small></td>
+                            <td>@row.TeamSize.DisplayName()</td>
+                            <td>@row.Interest.DisplayName()</td>
+                            <td><span class="badge @badge">@row.Status.DisplayName()</span></td>
+                            <td class="num"><partial name="_OfferAction" model="(row.Email, Model.OfferedEmails)" /></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
 </section>

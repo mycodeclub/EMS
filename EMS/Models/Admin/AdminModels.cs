@@ -7,13 +7,12 @@ namespace EMS.Models.Admin;
 public record AdminList<T>(IReadOnlyList<StatTile> Stats, IReadOnlyList<T> Rows);
 
 public record AdminDashboard(
-    IReadOnlyList<StatTile> Stats, ColumnChart Revenue, ColumnChart Enquiries, BarChart Pipeline, BarChart Industries,
-    BarChart Onboarding, IReadOnlyList<EMS.Services.Onboarding.TrialRow> RecentTrials);
+    IReadOnlyList<StatTile> Stats, ColumnChart Enquiries, BarChart Industries, BarChart Onboarding, IReadOnlyList<EMS.Services.Onboarding.TrialRow> RecentTrials);
 
 /// <summary>A list screen plus the owner emails that already have a trial, to show "Trial offered" instead of the action.</summary>
 public record OfferableList<T>(IReadOnlyList<StatTile> Stats, IReadOnlyList<T> Rows, IReadOnlySet<string> OfferedEmails);
 
-public record CustomersPage(AdminList<CustomerRow> Sample, IReadOnlyList<EMS.Services.Onboarding.TrialRow> Trials);
+public record CustomersPage(AdminList<CustomerRow> Paying, IReadOnlyList<EMS.Services.Onboarding.TrialRow> Trials);
 
 public record StatTile(string Label, string Value, string? Note = null);
 

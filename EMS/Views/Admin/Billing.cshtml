@@ -10,7 +10,7 @@
     </div>
 </header>
 
-<partial name="_SampleNotice" />
+<partial name="_NotStoredNotice" />
 
 <partial name="_Stats" model="Model.Stats" />
 
@@ -19,37 +19,46 @@
         <h2>Invoices</h2>
         <span>@Model.Rows.Count invoices</span>
     </div>
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Invoice</th>
-                    <th>Customer</th>
-                    <th>Issued</th>
-                    <th>Due</th>
-                    <th class="num">Amount</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var row in Model.Rows.OrderByDescending(r => r.Status == InvoiceStatus.Overdue).ThenByDescending(r => r.IssuedOn))
-                {
-                    var badge = row.Status switch
-                    {
-                        InvoiceStatus.Paid => "badge-green",
-                        InvoiceStatus.Due => "badge-blue",
-                        _ => "badge-orange",
-                    };
+    @if (Model.Rows.Count == 0)
+    {
+        <div class="empty">
+            <p>No invoices yet.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table>
+                <thead>
                     <tr>
-                        <td class="mono">@row.Number</td>
-                        <td>@row.Customer</td>
-                        <td>@row.IssuedOn.ToShortDate()</td>
-                        <td class="@(row.Status == InvoiceStatus.Overdue ? "late" : null)">@row.DueOn.ToShortDate()</td>
-                        <td class="num">@row.Amount.ToRupees()</td>
-                        <td><span class="badge @badge">@row.Status.DisplayName()</span></td>
+                        <th>Invoice</th>
+                        <th>Customer</th>
+                        <th>Issued</th>
+                        <th>Due</th>
+                        <th class="num">Amount</th>
+                        <th>Status</th>
                     </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+                </thead>
+                <tbody>
+                    @foreach (var row in Model.Rows.OrderByDescending(r => r.Status == InvoiceStatus.Overdue).ThenByDescending(r => r.IssuedOn))
+                    {
+                        var badge = row.Status switch
+                        {
+                            InvoiceStatus.Paid => "badge-green",
+                            InvoiceStatus.Due => "badge-blue",
+                            _ => "badge-orange",
+                        };
+                        <tr>
+                            <td class="mono">@row.Number</td>
+                            <td>@row.Customer</td>
+                            <td>@row.IssuedOn.ToShortDate()</td>
+                            <td class="@(row.Status == InvoiceStatus.Overdue ? "late" : null)">@row.DueOn.ToShortDate()</td>
+                            <td class="num">@row.Amount.ToRupees()</td>
+                            <td><span class="badge @badge">@row.Status.DisplayName()</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
 </section>

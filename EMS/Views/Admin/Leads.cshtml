@@ -14,7 +14,7 @@
     </div>
 </header>
 
-<partial name="_SampleNotice" />
+<partial name="_NotStoredNotice" />
 
 <partial name="_Stats" model="Model.Stats" />
 
@@ -23,44 +23,53 @@
         <h2>Pipeline</h2>
         <span>@Model.Rows.Count open leads</span>
     </div>
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Organization</th>
-                    <th>Contact</th>
-                    <th>Stage</th>
-                    <th>Size</th>
-                    <th class="num">Est. value / month</th>
-                    <th>Next follow-up</th>
-                    <th><span class="sr-only">Actions</span></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var row in Model.Rows.OrderBy(r => r.NextFollowUp))
-                {
-                    var badge = row.Stage switch
-                    {
-                        LeadStage.New => "badge-blue",
-                        LeadStage.DemoScheduled => "badge-indigo",
-                        LeadStage.ProposalSent or LeadStage.Negotiation => "badge-green",
-                        _ => "",
-                    };
-                    var missed = row.NextFollowUp < today;
+    @if (Model.Rows.Count == 0)
+    {
+        <div class="empty">
+            <p>No leads yet. You can still offer a free trial directly.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table>
+                <thead>
                     <tr>
-                        <td>@row.Organization<small>@row.Industry.DisplayName()</small></td>
-                        <td>@row.ContactName<small><a href="mailto:@row.Email">@row.Email</a></small></td>
-                        <td><span class="badge @badge">@row.Stage.DisplayName()</span></td>
-                        <td>@row.Employees staff<small>@row.Offices office@(row.Offices == 1 ? "" : "s")</small></td>
-                        <td class="num">@row.MonthlyValue.ToRupees()</td>
-                        <td class="@(missed ? "late" : null)">
-                            @(row.NextFollowUp == today ? "Today" : row.NextFollowUp.ToShortDate())
-                            <small>@(missed ? "Missed · " : "")@row.Owner</small>
-                        </td>
-                        <td class="num"><partial name="_OfferAction" model="(row.Email, Model.OfferedEmails)" /></td>
+                        <th>Organization</th>
+                        <th>Contact</th>
+                        <th>Stage</th>
+                        <th>Size</th>
+                        <th class="num">Est. value / month</th>
+                        <th>Next follow-up</th>
+                        <th><span class="sr-only">Actions</span></th>
                     </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+                </thead>
+                <tbody>
+                    @foreach (var row in Model.Rows.OrderBy(r => r.NextFollowUp))
+                    {
+                        var badge = row.Stage switch
+                        {
+                            LeadStage.New => "badge-blue",
+                            LeadStage.DemoScheduled => "badge-indigo",
+                            LeadStage.ProposalSent or LeadStage.Negotiation => "badge-green",
+                            _ => "",
+                        };
+                        var missed = row.NextFollowUp < today;
+                        <tr>
+                            <td>@row.Organization<small>@row.Industry.DisplayName()</small></td>
+                            <td>@row.ContactName<small><a href="mailto:@row.Email">@row.Email</a></small></td>
+                            <td><span class="badge @badge">@row.Stage.DisplayName()</span></td>
+                            <td>@row.Employees staff<small>@row.Offices office@(row.Offices == 1 ? "" : "s")</small></td>
+                            <td class="num">@row.MonthlyValue.ToRupees()</td>
+                            <td class="@(missed ? "late" : null)">
+                                @(row.NextFollowUp == today ? "Today" : row.NextFollowUp.ToShortDate())
+                                <small>@(missed ? "Missed · " : "")@row.Owner</small>
+                            </td>
+                            <td class="num"><partial name="_OfferAction" model="(row.Email, Model.OfferedEmails)" /></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
 </section>

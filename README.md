@@ -46,13 +46,13 @@ On startup the app creates the `SuperAdmin` and `OrgAdmin` roles and the super a
 
 > These credentials are for local development only. The password lives in `appsettings.Development.json`. In any other environment set `SuperAdmin__Email` and `SuperAdmin__Password` (and `ConnectionStrings__DefaultConnection`) as environment variables. An existing account keeps its password; changing the setting later does not reset it.
 
-After signing in, the super admin lands on the admin console at `/Admin`: a dashboard with charts, **Enquiries**, **Leads**, **Customers & trials** and **Billing**. Revenue, enquiries, leads, paying customers and billing are sample data from `Services/Admin/SampleAdminData.cs`; free trials and their onboarding progress are real.
+After signing in, the super admin lands on the admin console at `/Admin`: a dashboard with charts, **Enquiries**, **Leads**, **Customers & trials** and **Billing**. Enquiries (from the website contact form) and free trials come from the database. Leads, paying customers and billing are not stored yet, so those screens are empty. The app creates no sample or demo records.
 
 Anyone can register a normal account from the Register page. It has no admin access.
 
 ## Try the customer flow
 
-1. As super admin, open **Leads** and click **Offer free trial** on a lead (or **Offer a free trial** for a new customer). This creates the organization, a *Head office* branch and the owner's login with a temporary password, and emails the owner.
+1. As super admin, open **Enquiries** and click **Offer free trial** on an enquiry (or **Offer a free trial** for a new customer). This creates the organization, a *Head office* branch and the owner's login with a temporary password, and emails the owner.
 2. Without an SMTP server, the email is saved as an `.eml` file in `EMS/App_Data/mail` (open it in Outlook, Thunderbird or a text editor). The confirmation page also shows the email and the temporary password once.
 3. Sign in as the owner with that email and password. The setup wizard asks them to:
    1. choose their own password,

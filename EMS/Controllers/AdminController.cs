@@ -2,64 +2,57 @@ using System.Globalization;
 using EMS.Models;
 using EMS.Models.Admin;
 using EMS.Models.Common;
-using EMS.Services.Admin;
+using EMS.Services.Common;
 using EMS.Services.Onboarding;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace EMS.Controllers;
 
 /// <summary>
-/// Super admin console. Enquiries, leads, customers and billing show <see cref="SampleAdminData"/> until they are
-/// connected to the database; free trials (and the onboarding progress on the dashboard) are real.
+/// Super admin console. Enquiries and free trials come from the database. Leads, paying customers and billing are
+/// not stored yet, so those screens are empty.
 /// </summary>
 [Authorize(Roles = AppRoles.SuperAdmin)]
-public class AdminController(TrialService trials) : Controller
+public class AdminController(TrialService trials, ICrudService<Enquiry> enquiries) : Controller
 {
     public async Task<IActionResult> Index(CancellationToken ct)
     {
-        var revenue = SampleAdminData.RevenueByMonth();
-        var enquiries = SampleAdminData.EnquiriesByWeek();
-        var leads = SampleAdminData.Leads();
-        var customers = SampleAdminData.Customers();
         var live = await trials.TrialsAsync(ct);
-        var mrr = revenue[^1].Amount;
-        var growth = (mrr - revenue[^2].Amount) / revenue[^2].Amount;
+        var weeks = await EnquiriesByWeekAsync(8, ct);
+        var newEnquiries = await enquiries.Query().CountAsync(e => e.Status == EnquiryStatus.New, ct);
+        var totalEnquiries = await enquiries.Query().CountAsync(ct);
 
         int Reached(OnboardingStep step) => live.Count(t => t.Step > step);
         return View(new AdminDashboard(
         [
-            new("Monthly recurring revenue", mrr.ToRupees(), $"{growth:+0.0%;-0.0%} vs last month"),
-            new("Active customers", customers.Count.ToString(), $"{customers.Sum(c => c.Employees):N0} employees managed"),
-            new("Open leads", leads.Count.ToString(), $"{leads.Sum(l => l.MonthlyValue).ToRupees()} / month in pipeline"),
+            new("New enquiries", newEnquiries.ToString(), $"{totalEnquiries} in total"),
             new("Free trials", live.Count.ToString(), $"{live.Count(t => t.Step == OnboardingStep.Done)} finished setup"),
+            new("Still setting up", live.Count(t => t.Step != OnboardingStep.Done).ToString()),
+            new("Employees managed", live.Sum(t => t.Employees).ToString("N0"), "Across all trials"),
         ],
-        new ColumnChart("Monthly recurring revenue", "Last 12 months",
-            revenue.Select(r => new ChartPoint(r.Month.ToString("MMM", CultureInfo.InvariantCulture), r.Amount, $"{r.Month:MMM yyyy}: {r.Amount.ToRupees()}")).ToList(),
-            Charts.CompactRupees),
         new ColumnChart("Website enquiries", "Per week, last 8 weeks",
-            enquiries.Select(w => new ChartPoint(w.WeekStart.ToString("dd MMM", CultureInfo.InvariantCulture), w.Count, $"Week of {w.WeekStart.ToShortDate()}: {w.Count} enquiries")).ToList(),
+            weeks.Select(w => new ChartPoint(w.WeekStart.ToString("dd MMM", CultureInfo.InvariantCulture), w.Count, $"Week of {w.WeekStart.ToShortDate()}: {w.Count} enquiries")).ToList(),
             v => v.ToString("0", CultureInfo.InvariantCulture)),
-        new BarChart("Lead pipeline", "Open leads by stage",
-            Enum.GetValues<LeadStage>().Select(s => (Stage: s, Count: leads.Count(l => l.Stage == s)))
-                .Select(x => new ChartPoint(x.Stage.DisplayName(), x.Count, $"{x.Count} lead{(x.Count == 1 ? "" : "s")}")).ToList()),
-        new BarChart("Customers by industry", "Active customers",
-            customers.GroupBy(c => c.Industry).OrderByDescending(g => g.Count())
-                .Select(g => new ChartPoint(g.Key.DisplayName(), g.Count(), $"{g.Count()} customer{(g.Count() == 1 ? "" : "s")}")).ToList()),
+        new BarChart("Trials by industry", "Organizations on a free trial",
+            live.Where(t => t.Industry is not null).GroupBy(t => t.Industry!.Value).OrderByDescending(g => g.Count())
+                .Select(g => new ChartPoint(g.Key.DisplayName(), g.Count(), $"{g.Count()} trial{(g.Count() == 1 ? "" : "s")}")).ToList()),
         new BarChart("Trial onboarding", "How far each free trial has got",
-        [
-            new("Trial offered", live.Count, $"{live.Count} offered"),
-            new("Signed in, password changed", Reached(OnboardingStep.Password), $"{Reached(OnboardingStep.Password)} of {live.Count}"),
-            new("Profile completed", Reached(OnboardingStep.Profile), $"{Reached(OnboardingStep.Profile)} of {live.Count}"),
-            new("Shifts set up", Reached(OnboardingStep.Shifts), $"{Reached(OnboardingStep.Shifts)} of {live.Count}"),
-            new("Setup finished", Reached(OnboardingStep.Employees), $"{Reached(OnboardingStep.Employees)} of {live.Count}"),
-        ]),
+            live.Count == 0 ? [] :
+            [
+                new("Trial offered", live.Count, $"{live.Count} offered"),
+                new("Signed in, password changed", Reached(OnboardingStep.Password), $"{Reached(OnboardingStep.Password)} of {live.Count}"),
+                new("Profile completed", Reached(OnboardingStep.Profile), $"{Reached(OnboardingStep.Profile)} of {live.Count}"),
+                new("Shifts set up", Reached(OnboardingStep.Shifts), $"{Reached(OnboardingStep.Shifts)} of {live.Count}"),
+                new("Setup finished", Reached(OnboardingStep.Employees), $"{Reached(OnboardingStep.Employees)} of {live.Count}"),
+            ]),
         live.Take(5).ToList()));
     }
 
     public async Task<IActionResult> Enquiries(CancellationToken ct)
     {
-        var rows = SampleAdminData.Enquiries();
+        var rows = (await enquiries.Query().OrderByDescending(e => e.CreatedAt).ToListAsync(ct)).Select(ToRow).ToList();
         return View(new OfferableList<EnquiryRow>(
         [
             new("New", rows.Count(r => r.Status == EnquiryStatus.New).ToString(), "Awaiting first call"),
@@ -71,7 +64,8 @@ public class AdminController(TrialService trials) : Controller
 
     public async Task<IActionResult> Leads(CancellationToken ct)
     {
-        var rows = SampleAdminData.Leads();
+        // Leads are not stored yet.
+        IReadOnlyList<LeadRow> rows = [];
         var weekEnd = DateOnly.FromDateTime(DateTime.Today.AddDays(7));
         return View(new OfferableList<LeadRow>(
         [
@@ -84,7 +78,8 @@ public class AdminController(TrialService trials) : Controller
 
     public async Task<IActionResult> Customers(CancellationToken ct)
     {
-        var rows = SampleAdminData.Customers();
+        // Paying customers are not stored yet.
+        IReadOnlyList<CustomerRow> rows = [];
         return View(new CustomersPage(new AdminList<CustomerRow>(
         [
             new("Active customers", rows.Count.ToString(), $"{rows.Count(r => r.Health == CustomerHealth.Onboarding)} onboarding"),
@@ -96,7 +91,8 @@ public class AdminController(TrialService trials) : Controller
 
     public IActionResult Billing()
     {
-        var rows = SampleAdminData.Invoices();
+        // Invoices are not stored yet.
+        IReadOnlyList<InvoiceRow> rows = [];
         decimal Total(InvoiceStatus status) => rows.Where(r => r.Status == status).Sum(r => r.Amount);
         return View(new AdminList<InvoiceRow>(
         [
@@ -108,16 +104,13 @@ public class AdminController(TrialService trials) : Controller
     }
 
     /// <summary>Free-trial form, prefilled from the lead or enquiry with this email when there is one.</summary>
-    public IActionResult OfferTrial(string? email)
+    public async Task<IActionResult> OfferTrial(string? email, CancellationToken ct)
     {
         var input = new TrialInput();
-        if (SampleAdminData.Leads().FirstOrDefault(l => l.Email == email) is { } lead)
+        if (!string.IsNullOrWhiteSpace(email)
+            && await enquiries.Query().Where(e => e.Email == email).OrderByDescending(e => e.CreatedAt).FirstOrDefaultAsync(ct) is { } enquiry)
         {
-            input = new TrialInput { OrganizationName = lead.Organization, OwnerName = lead.ContactName, OwnerEmail = lead.Email, Industry = lead.Industry };
-        }
-        if (SampleAdminData.Enquiries().FirstOrDefault(e => e.Email == email) is { } enquiry)
-        {
-            input.OrganizationName = enquiry.Organization;
+            input.OrganizationName = enquiry.OrganizationName;
             input.OwnerName = enquiry.Name;
             input.OwnerEmail = enquiry.Email;
             input.OwnerPhone = enquiry.Phone;
@@ -142,6 +135,24 @@ public class AdminController(TrialService trials) : Controller
         // Shown once, not redirected: the temporary password is not stored anywhere readable.
         return View("TrialOffered", result.Data);
     }
+
+    /// <summary>Enquiries received in each of the last <paramref name="weeks"/> weeks (Monday to Sunday), ending with this week.</summary>
+    private async Task<IReadOnlyList<(DateOnly WeekStart, int Count)>> EnquiriesByWeekAsync(int weeks, CancellationToken ct)
+    {
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var monday = today.AddDays(-(((int)today.DayOfWeek + 6) % 7));
+        var first = monday.AddDays(-7 * (weeks - 1));
+        var since = first.ToDateTime(TimeOnly.MinValue).ToUniversalTime();
+        var received = (await enquiries.Query().Where(e => e.CreatedAt >= since).Select(e => e.CreatedAt).ToListAsync(ct))
+            .Select(at => DateOnly.FromDateTime(at.ToLocalTime())).ToList();
+        return Enumerable.Range(0, weeks)
+            .Select(i => first.AddDays(7 * i))
+            .Select(start => (start, received.Count(d => d >= start && d < start.AddDays(7))))
+            .ToList();
+    }
+
+    private static EnquiryRow ToRow(Enquiry e) => new(
+        e.CreatedAt.ToLocalTime(), e.Name, e.OrganizationName, e.Email, e.Phone, e.Industry, e.TeamSize, e.Interest, e.Status);
 
     private async Task<IReadOnlySet<string>> OfferedAsync(CancellationToken ct) =>
         (await trials.OwnerEmailsAsync(ct)).ToHashSet(StringComparer.OrdinalIgnoreCase);
