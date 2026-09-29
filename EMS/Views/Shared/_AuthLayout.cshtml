@@ -1,0 +1,84 @@
+@using Microsoft.Extensions.Options
+@using EMS.Models.Landing
+@inject IOptions<CompanyOptions> CompanyOptions
+@{
+    // Layout for every Identity page (sign in, register, forgot password, manage account…).
+    // Pages set ViewData["AuthAside"] = true for the split design with the brand panel;
+    // the rest render centred. Bootstrap stays loaded for the built-in Identity pages that were not customised.
+    var company = CompanyOptions.Value;
+    var split = ViewData["AuthAside"] is true;
+    var title = ViewData["Title"] as string;
+    var asideTitle = ViewData["AsideTitle"] as string ?? "Every shift. Every office. One system.";
+    var asideText = ViewData["AsideText"] as string ?? "Attendance, shifts and leave for hospitals, hotels and offices of every size.";
+    var asidePoints = ViewData["AsidePoints"] as string[] ?? ["Biometric device sync", "24×7 shifts and rosters", "Leave with approvals"];
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>@(title is null ? company.ProductName : $"{title} — {company.ProductName}")</title>
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#ffffff" />
+    <link rel="icon" href="~/img/logo.svg" type="image/svg+xml" />
+    <link rel="alternate icon" href="~/favicon.ico" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/brand.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/auth.css" asp-append-version="true" />
+</head>
+<body class="auth @(split ? "auth-is-split" : "auth-is-centered")">
+    <a class="skip-link" href="#main">Skip to content</a>
+    <div class="auth-shell">
+        @if (split)
+        {
+            <aside class="auth-aside" aria-label="@company.ProductName">
+                <a class="auth-brand auth-brand-light" href="~/">
+                    <img src="~/img/logo.svg" alt="" width="32" height="32" />
+                    <span><b>@company.ProductName</b><small>by @company.Name</small></span>
+                </a>
+                <div class="auth-aside-body">
+                    <h2>@asideTitle</h2>
+                    <p>@asideText</p>
+                    <ul>
+                        @foreach (var point in asidePoints)
+                        {
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>@point</li>
+                        }
+                    </ul>
+                </div>
+                <p class="auth-aside-foot">© @DateTime.Now.Year @company.Name</p>
+            </aside>
+        }
+        <div class="auth-panel">
+            <header class="auth-top">
+                <a class="auth-brand @(split ? "auth-brand-mobile" : "")" href="~/">
+                    <img src="~/img/logo.svg" alt="" width="28" height="28" />
+                    <span><b>@company.ProductName</b><small>by @company.Name</small></span>
+                </a>
+                <div class="auth-top-links">
+                    <a class="auth-home" href="~/">← Back to home</a>
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <form method="post" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Content("~/")">
+                            <button type="submit" class="btn btn-link auth-home">Sign out</button>
+                        </form>
+                    }
+                </div>
+            </header>
+            <main id="main" class="auth-main">
+                <div class="auth-content">
+                    @RenderBody()
+                </div>
+            </main>
+            <footer class="auth-footer">
+                <a href="~/Home/Privacy">Privacy</a>
+                <a href="~/#contact">Contact</a>
+                <span>© @DateTime.Now.Year @company.Name</span>
+            </footer>
+        </div>
+    </div>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

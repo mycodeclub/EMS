@@ -1,0 +1,55 @@
+@page
+@model RegisterModel
+@{
+    ViewData["Title"] = "Create account";
+    ViewData["AuthAside"] = true;
+    ViewData["AsideTitle"] = "Start your free month.";
+    ViewData["AsideText"] = "Everything you need to run attendance, shifts and leave for a single office.";
+    ViewData["AsidePoints"] = new[] { "Free for the first month", "Up to 20 employees · one office", "Biometric device sync", "No card required" };
+}
+
+<div class="auth-heading">
+    <h1>Create your account</h1>
+    <p>Free for the first month. No card required.</p>
+</div>
+
+<form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="auth-form">
+    <div asp-validation-summary="ModelOnly" class="auth-alert" role="alert"></div>
+
+    <div class="form-floating">
+        <input asp-for="Input.Email" class="form-control" type="email" autocomplete="username" inputmode="email" aria-required="true" placeholder="name@company.com" />
+        <label asp-for="Input.Email">Work email</label>
+        <span asp-validation-for="Input.Email" class="field-error"></span>
+    </div>
+    <div class="form-floating">
+        <input asp-for="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" aria-describedby="password-hint" placeholder="Password" />
+        <label asp-for="Input.Password">Password</label>
+        <span asp-validation-for="Input.Password" class="field-error"></span>
+    </div>
+    <p id="password-hint" class="auth-hint">At least 6 characters, with an uppercase letter, a lowercase letter, a number and a symbol.</p>
+    <div class="form-floating">
+        <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="Confirm password" />
+        <label asp-for="Input.ConfirmPassword">Confirm password</label>
+        <span asp-validation-for="Input.ConfirmPassword" class="field-error"></span>
+    </div>
+
+    <button id="registerSubmit" type="submit" class="btn btn-primary btn-lg w-100">Create account</button>
+    <p class="auth-small auth-terms">By creating an account you agree to our <a href="~/Home/Privacy">privacy policy</a>.</p>
+</form>
+
+@if ((Model.ExternalLogins?.Count ?? 0) > 0)
+{
+    <div class="auth-divider"><span>or</span></div>
+    <form id="external-account" asp-page="./ExternalLogin" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="auth-external">
+        @foreach (var provider in Model.ExternalLogins!)
+        {
+            <button type="submit" class="btn btn-outline-secondary btn-lg w-100" name="provider" value="@provider.Name" title="Sign up with @provider.DisplayName">Continue with @provider.DisplayName</button>
+        }
+    </form>
+}
+
+<p class="auth-switch">Already have an account? <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl">Sign in</a></p>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

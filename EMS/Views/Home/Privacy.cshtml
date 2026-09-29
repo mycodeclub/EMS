@@ -1,6 +1,58 @@
-﻿@{
-    ViewData["Title"] = "Privacy Policy";
+@using Microsoft.Extensions.Options
+@using EMS.Models.Landing
+@inject IOptions<CompanyOptions> CompanyOptions
+@{
+    Layout = "_LandingLayout";
+    var company = CompanyOptions.Value;
+    ViewData["Title"] = $"Privacy policy — {company.ProductName}";
+    ViewData["Description"] = $"How {company.Name} handles information submitted through the {company.ProductName} website.";
 }
-<h1>@ViewData["Title"]</h1>
+<header class="nav">
+    <div class="nav-inner">
+        <a class="brand" asp-action="Index">
+            <img src="~/img/logo.svg" alt="" width="28" height="28" />
+            <span class="brand-name">@company.ProductName</span>
+            <span class="brand-by">by @company.Name</span>
+        </a>
+        <a class="btn btn-sm nav-cta" asp-action="Index" asp-fragment="contact" style="margin-left:auto">Contact us</a>
+    </div>
+</header>
+<main id="main" class="section">
+    <article class="container container-narrow legal">
+        <h1>Privacy policy</h1>
+        <p class="legal-updated">Last updated: @DateTime.Now.ToString("MMMM yyyy")</p>
 
-<p>Use this page to detail your site's privacy policy.</p>
+        <h2>Who we are</h2>
+        <p>@company.ProductName is an employee management system provided by @company.Name ("we", "us").</p>
+
+        <h2>What we collect on this website</h2>
+        <p>When you send an enquiry we collect your name, work email, phone number, organization name, industry, team size and any message you write. We also keep standard server logs (such as IP address and browser type) to keep the service secure and prevent spam.</p>
+
+        <h2>How we use it</h2>
+        <p>We use your details only to respond to your enquiry, set up your free trial or demo, and follow up about @company.ProductName. We do not sell your information or share it with third parties for their marketing.</p>
+
+        <h2>How long we keep it</h2>
+        <p>Enquiries are kept for as long as needed to respond and for our business records. You can ask us to delete your details at any time.</p>
+
+        <h2>Your rights</h2>
+        <p>You can ask to see, correct or delete the personal information we hold about you, in line with the Digital Personal Data Protection Act, 2023.</p>
+
+        <h2>Contact</h2>
+        <p>
+            For any privacy question or request,
+            @if (!string.IsNullOrWhiteSpace(company.Email))
+            {
+                <text>email us at <a href="mailto:@company.Email">@company.Email</a>.</text>
+            }
+            else
+            {
+                <text>use the <a asp-action="Index" asp-fragment="contact">contact form</a>.</text>
+            }
+        </p>
+    </article>
+</main>
+<footer class="footer">
+    <div class="container footer-inner">
+        <p class="footer-copy" style="border:0;padding:0">© @DateTime.Now.Year @company.Name. All rights reserved.</p>
+    </div>
+</footer>

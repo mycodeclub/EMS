@@ -1,0 +1,22 @@
+@page
+@model LogoutModel
+@{
+    ViewData["Title"] = "Signed out";
+}
+
+<div class="auth-heading auth-heading-center">
+    @if (User.Identity?.IsAuthenticated ?? false)
+    {
+        <h1>Sign out?</h1>
+        <p>You'll need to sign in again to use EMS.</p>
+        <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Page("/", new { area = "" })" method="post" class="auth-form">
+            <button type="submit" class="btn btn-primary btn-lg w-100">Sign out</button>
+        </form>
+    }
+    else
+    {
+        <h1>You're signed out.</h1>
+        <p>Thanks for using EMS.</p>
+        <a class="btn btn-primary btn-lg w-100" asp-area="Identity" asp-page="/Account/Login">Sign in again</a>
+    }
+</div>

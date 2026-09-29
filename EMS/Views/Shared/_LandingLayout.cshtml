@@ -1,0 +1,44 @@
+@using Microsoft.Extensions.Options
+@using EMS.Models.Landing
+@inject IOptions<CompanyOptions> CompanyOptions
+@{
+    var company = CompanyOptions.Value;
+    var title = ViewData["Title"] as string ?? $"{company.ProductName} — Employee Management System";
+    var description = ViewData["Description"] as string
+        ?? "Attendance, shifts and leave for hospitals, hotels and offices of every size. Multiple offices, biometric sync and 24x7 rosters. First month free for up to 20 employees.";
+    var siteUrl = company.SiteUrl?.TrimEnd('/');
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>@title</title>
+    <meta name="description" content="@description" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="application-name" content="@company.ProductName" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="@company.ProductName by @company.Name" />
+    <meta property="og:title" content="@title" />
+    <meta property="og:description" content="@description" />
+    <meta name="twitter:card" content="summary" />
+    @if (!string.IsNullOrWhiteSpace(siteUrl))
+    {
+        <link rel="canonical" href="@siteUrl/" />
+        <meta property="og:url" content="@siteUrl/" />
+        <meta property="og:image" content="@siteUrl/img/logo.svg" />
+    }
+    <link rel="icon" href="~/img/logo.svg" type="image/svg+xml" />
+    <link rel="alternate icon" href="~/favicon.ico" />
+    <link rel="apple-touch-icon" href="~/img/logo.svg" />
+    <script>document.documentElement.classList.add('js');</script>
+    <link rel="stylesheet" href="~/css/brand.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/landing.css" asp-append-version="true" />
+    @await RenderSectionAsync("Head", required: false)
+</head>
+<body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    @RenderBody()
+    <script src="~/js/landing.js" asp-append-version="true" defer></script>
+</body>
+</html>

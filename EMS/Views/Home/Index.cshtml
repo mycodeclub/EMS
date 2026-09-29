@@ -1,8 +1,530 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@using Microsoft.AspNetCore.Html
+@using Microsoft.Extensions.Options
+@using EMS.Models.Landing
+@model EnquiryInput
+@inject IOptions<CompanyOptions> CompanyOptions
+@{
+    Layout = "_LandingLayout";
+    var company = CompanyOptions.Value;
+    var sentTo = ViewData["EnquirySent"] as string;
+    var hasErrors = !ViewData.ModelState.IsValid;
+}
+@functions {
+    private static readonly Dictionary<string, string> IconPaths = new()
+    {
+        ["offices"] = "<path d=\"M3 21h18\"/><path d=\"M5 21V7l7-4 7 4v14\"/><path d=\"M9 21v-4h6v4\"/><path d=\"M9 10h.01M15 10h.01M9 14h.01M15 14h.01\"/>",
+        ["fingerprint"] = "<path d=\"M12 11v3a8 8 0 0 1-1.5 4.7\"/><path d=\"M8.4 7.6A5 5 0 0 1 17 11v1.5\"/><path d=\"M5.2 9.6A7.5 7.5 0 0 1 6 7\"/><path d=\"M7.2 14.8c.5-1.1.8-2.4.8-3.8a4 4 0 0 1 4-4\"/><path d=\"M16.6 16.2c-.3 1.3-.8 2.6-1.5 3.8\"/><path d=\"M19 8.4a9 9 0 0 1 .8 5.6\"/><path d=\"M9.6 20.6c.8-1 1.4-2.1 1.9-3.3\"/>",
+        ["moon"] = "<path d=\"M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z\"/>",
+        ["calendar"] = "<rect x=\"3\" y=\"4\" width=\"18\" height=\"18\" rx=\"3\"/><path d=\"M16 2v4M8 2v4M3 10h18\"/><path d=\"M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01\"/>",
+        ["history"] = "<path d=\"M3 3v6h6\"/><path d=\"M3.5 15a9 9 0 1 0 2.1-9.4L3 9\"/><path d=\"M12 7v5l3 2\"/>",
+        ["shield"] = "<path d=\"M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z\"/><path d=\"m9 12 2 2 4-4\"/>",
+        ["doc"] = "<path d=\"M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z\"/><path d=\"M14 2v6h6M16 13H8M16 17H8M10 9H8\"/>",
+        ["users"] = "<path d=\"M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8\"/>",
+        ["org"] = "<rect x=\"9\" y=\"2\" width=\"6\" height=\"6\" rx=\"1\"/><rect x=\"2\" y=\"16\" width=\"6\" height=\"6\" rx=\"1\"/><rect x=\"16\" y=\"16\" width=\"6\" height=\"6\" rx=\"1\"/><path d=\"M12 8v4M5 16v-4h14v4\"/>",
+        ["hospital"] = "<rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"5\"/><path d=\"M12 8v8M8 12h8\"/>",
+        ["hotel"] = "<path d=\"M2 4v16M2 8h17a3 3 0 0 1 3 3v9M2 17h20\"/><circle cx=\"7\" cy=\"12\" r=\"2\"/>",
+        ["landmark"] = "<path d=\"M3 22h18M6 18v-7M10 18v-7M14 18v-7M18 18v-7\"/><path d=\"M12 2l9 5H3z\"/>",
+        ["briefcase"] = "<rect x=\"2\" y=\"7\" width=\"20\" height=\"14\" rx=\"3\"/><path d=\"M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16\"/>",
+        ["check"] = "<path d=\"M20 6 9 17l-5-5\"/>",
+        ["mail"] = "<rect x=\"2\" y=\"4\" width=\"20\" height=\"16\" rx=\"3\"/><path d=\"m22 7-10 6L2 7\"/>",
+        ["phone"] = "<path d=\"M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z\"/>",
+        ["pin"] = "<path d=\"M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0z\"/><circle cx=\"12\" cy=\"10\" r=\"3\"/>",
+        ["arrow"] = "<path d=\"M5 12h14M13 6l6 6-6 6\"/>",
+    };
+
+    private static IHtmlContent Icon(string name, string cssClass = "icon") =>
+        new HtmlString($"<svg class=\"{cssClass}\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\">{IconPaths[name]}</svg>");
+}
+@section Head {
+    <script type="application/ld+json">
+    @Html.Raw(System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, object?>
+    {
+        ["@context"] = "https://schema.org",
+        ["@type"] = "SoftwareApplication",
+        ["name"] = $"{company.ProductName} — Employee Management System",
+        ["applicationCategory"] = "BusinessApplication",
+        ["operatingSystem"] = "Web",
+        ["description"] = "Attendance, shifts and leave management for hospitals, hotels and offices of every size.",
+        ["offers"] = new Dictionary<string, object>
+        {
+            ["@type"] = "Offer",
+            ["price"] = "0",
+            ["priceCurrency"] = "INR",
+            ["description"] = "First month free for up to 20 employees",
+        },
+        ["publisher"] = new Dictionary<string, object> { ["@type"] = "Organization", ["name"] = company.Name },
+    }))
+    </script>
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<header class="nav" id="top">
+    <div class="nav-inner">
+        <a class="brand" href="#top" aria-label="@company.ProductName home">
+            <img src="~/img/logo.svg" alt="" width="28" height="28" />
+            <span class="brand-name">@company.ProductName</span>
+            <span class="brand-by">by @company.Name</span>
+        </a>
+        <nav class="nav-links" id="nav-links" aria-label="Main">
+            <a href="#features">Features</a>
+            <a href="#industries">Industries</a>
+            <a href="#pricing">Pricing</a>
+            <a href="#faq">FAQ</a>
+            <a href="#contact">Contact</a>
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <a asp-area="Identity" asp-page="/Account/Manage/Index">My account</a>
+            }
+            else
+            {
+                <a asp-area="Identity" asp-page="/Account/Login">Sign in</a>
+            }
+        </nav>
+        <a class="btn btn-sm nav-cta" href="#contact" data-interest="FreeTrial">Start free trial</a>
+        <button class="nav-toggle" type="button" aria-controls="nav-links" aria-expanded="false" aria-label="Open menu">
+            <span></span><span></span>
+        </button>
+    </div>
+</header>
+
+<main id="main">
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="container hero-copy">
+            <p class="eyebrow">Employee Management System</p>
+            <h1>Every shift. Every office.<br /><span class="gradient-text">One system.</span></h1>
+            <p class="lead">Attendance, shifts and leave for teams that never stop — from a single clinic to a hospital group, from a boutique hotel to a public office.</p>
+            <div class="hero-actions">
+                <a class="btn btn-lg" href="#contact" data-interest="FreeTrial">Start your free month</a>
+                <a class="link-arrow" href="#contact" data-interest="Demo">Book a demo @Icon("arrow", "icon-sm")</a>
+            </div>
+            <ul class="hero-points" aria-label="Free trial terms">
+                <li>@Icon("check", "icon-sm") First month free</li>
+                <li>@Icon("check", "icon-sm") Up to 20 employees</li>
+                <li>@Icon("check", "icon-sm") No card required</li>
+            </ul>
+        </div>
+
+        <div class="container">
+            <div class="device reveal" role="img" aria-label="Preview of the EMS dashboard showing today's attendance across offices and shifts">
+                <div class="device-bar" aria-hidden="true">
+                    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                    <span class="device-title">@company.ProductName · Today</span>
+                </div>
+                <div class="device-body" aria-hidden="true">
+                    <div class="stats">
+                        <div class="stat"><span class="stat-label">Present</span><span class="stat-value">1,186</span><span class="stat-trend up">96.4%</span></div>
+                        <div class="stat"><span class="stat-label">On leave</span><span class="stat-value">38</span><span class="stat-trend">12 approved today</span></div>
+                        <div class="stat"><span class="stat-label">Night shift</span><span class="stat-value">214</span><span class="stat-trend">22:00 – 06:00</span></div>
+                        <div class="stat"><span class="stat-label">Offices</span><span class="stat-value">9</span><span class="stat-trend up">All synced</span></div>
+                    </div>
+                    <div class="panels">
+                        <div class="panel">
+                            <p class="panel-title">Attendance by office</p>
+                            <ul class="bars">
+                                <li><span>City Hospital</span><span class="bar"><i style="--w:97%"></i></span><b>97%</b></li>
+                                <li><span>Lakeview Hotel</span><span class="bar"><i style="--w:94%"></i></span><b>94%</b></li>
+                                <li><span>Head Office</span><span class="bar"><i style="--w:99%"></i></span><b>99%</b></li>
+                                <li><span>North Clinic</span><span class="bar"><i style="--w:91%"></i></span><b>91%</b></li>
+                            </ul>
+                        </div>
+                        <div class="panel">
+                            <p class="panel-title">Shifts · 24 hours</p>
+                            <div class="timeline">
+                                <div class="tl-row"><span>Morning</span><span class="tl-track"><i class="s1" style="--l:25%;--w:33.3%"></i></span></div>
+                                <div class="tl-row"><span>Evening</span><span class="tl-track"><i class="s2" style="--l:58.3%;--w:33.3%"></i></span></div>
+                                <div class="tl-row"><span>Night</span><span class="tl-track"><i class="s3" style="--l:91.6%;--w:8.4%"></i><i class="s3" style="--l:0%;--w:25%"></i></span></div>
+                                <div class="tl-row"><span>General</span><span class="tl-track"><i class="s4" style="--l:37.5%;--w:37.5%"></i></span></div>
+                                <div class="tl-scale"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="chip chip-a" aria-hidden="true"><span class="pulse"></span>Biometric sync · 1,248 punches · just now</div>
+                <div class="chip chip-b" aria-hidden="true">@Icon("check", "icon-sm") Leave approved · CL · 1 day</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Ideal for -->
+    <section class="ideal" aria-label="Ideal for">
+        <div class="container ideal-inner">
+            <p>Ideal for</p>
+            <ul>
+                <li>@Icon("hospital") Hospitals</li>
+                <li>@Icon("hotel") Hotels</li>
+                <li>@Icon("landmark") Public offices</li>
+                <li>@Icon("briefcase") Businesses, small to large</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Feature highlights -->
+    <section class="section" id="features">
+        <div class="container">
+            <header class="section-head reveal">
+                <p class="eyebrow">Features</p>
+                <h2>Built for how your people<br />actually work.</h2>
+            </header>
+
+            <div class="feature-row reveal">
+                <div class="feature-copy">
+                    <span class="feature-icon">@Icon("offices")</span>
+                    <h3>Head office and every branch. One view.</h3>
+                    <p>Run each office with its own address, GST registration, contacts, shifts and holiday list — and see all of them together. Add a new site in minutes.</p>
+                </div>
+                <div class="feature-visual">
+                    <ul class="office-list" aria-hidden="true">
+                        <li><b>Head Office</b><span>Mumbai · 142 staff</span><em class="tag">HQ</em></li>
+                        <li><b>City Hospital</b><span>Pune · 486 staff</span><em class="tag tag-green">24×7</em></li>
+                        <li><b>Lakeview Hotel</b><span>Goa · 173 staff</span><em class="tag tag-green">24×7</em></li>
+                        <li><b>North Clinic</b><span>Nagpur · 58 staff</span><em class="tag">Day</em></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="feature-row reverse reveal">
+                <div class="feature-copy">
+                    <span class="feature-icon">@Icon("fingerprint")</span>
+                    <h3>Your biometric devices. In sync.</h3>
+                    <p>Punches flow in from the devices you already own and land on the right employee. When a device ID is reused after someone leaves, the full history stays exact — every punch belongs to whoever held that ID on that day.</p>
+                </div>
+                <div class="feature-visual">
+                    <ul class="punch-log" aria-hidden="true">
+                        <li><span class="mono">06:58</span><b>Priya S.</b><span>Main gate · IN</span><em class="ok">On time</em></li>
+                        <li><span class="mono">07:12</span><b>Rahul K.</b><span>Ward B · IN</span><em class="late">Late 2m</em></li>
+                        <li><span class="mono">14:03</span><b>Anita D.</b><span>Kitchen · OUT</span><em class="ok">8h 05m</em></li>
+                        <li><span class="mono">22:01</span><b>Imran P.</b><span>ICU · IN</span><em class="night">Night</em></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="feature-row reveal">
+                <div class="feature-copy">
+                    <span class="feature-icon">@Icon("calendar")</span>
+                    <h3>Leave, without the paperwork.</h3>
+                    <p>Define your own leave types — earned, casual, sick, maternity — with yearly quotas and carry-forward. Staff apply, managers approve, balances update themselves.</p>
+                </div>
+                <div class="feature-visual">
+                    <div class="leave-card" aria-hidden="true">
+                        <div class="leave-head"><b>Leave balance · 2026</b><span>Nisha R.</span></div>
+                        <div class="leave-grid">
+                            <div><span>Earned</span><b>14.5</b><i style="--w:72%"></i></div>
+                            <div><span>Casual</span><b>6</b><i style="--w:50%"></i></div>
+                            <div><span>Sick</span><b>9</b><i style="--w:75%"></i></div>
+                        </div>
+                        <div class="leave-req"><span>CL · 14 Oct · 1 day</span><em class="ok">Approved</em></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 24x7 dark band -->
+    <section class="band" aria-labelledby="band-title">
+        <div class="container">
+            <header class="section-head reveal">
+                <p class="eyebrow eyebrow-light">24×7 staff management</p>
+                <h2 id="band-title">Made for teams that work<br />around the clock.</h2>
+                <p class="lead lead-light">Night shifts that end tomorrow still count for today. Rotating rosters, double shifts, grace minutes and half-day rules — set once for each shift.</p>
+            </header>
+            <div class="band-stats reveal">
+                <div><b>24×7</b><span>Rosters for wards, front desks and control rooms</span></div>
+                <div><b>Overnight</b><span>Night shifts from 22:00 to 06:00 count on the day they start</span></div>
+                <div><b>2×</b><span>Double shifts on the same day, handled correctly</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Feature grid -->
+    <section class="section section-alt">
+        <div class="container">
+            <header class="section-head reveal">
+                <h2>Everything else you need.</h2>
+                <p class="lead">The details that make HR work at scale.</p>
+            </header>
+            <div class="grid">
+                <article class="card reveal">
+                    <span class="feature-icon">@Icon("moon")</span>
+                    <h3>Shift master</h3>
+                    <p>Morning, evening, night or general. Breaks, grace time and minimum hours for half and full days.</p>
+                </article>
+                <article class="card reveal">
+                    <span class="feature-icon">@Icon("calendar")</span>
+                    <h3>Holiday calendars</h3>
+                    <p>A yearly plan for the whole organization or one branch for state holidays — or switch it off for 24×7 operations.</p>
+                </article>
+                <article class="card reveal">
+                    <span class="feature-icon">@Icon("history")</span>
+                    <h3>Complete audit trail</h3>
+                    <p>Every record shows who created it, who changed it and when. Deleted records can be restored.</p>
+                </article>
+                <article class="card reveal">
+                    <span class="feature-icon">@Icon("shield")</span>
+                    <h3>Nothing is ever lost</h3>
+                    <p>Records are never permanently deleted, and employee codes are never reused — your history stays trustworthy.</p>
+                </article>
+                <article class="card reveal">
+                    <span class="feature-icon">@Icon("doc")</span>
+                    <h3>Ready for India</h3>
+                    <p>PAN, Aadhaar and GSTIN fields with format checks, and a separate GST registration for each state you operate in.</p>
+                </article>
+                <article class="card reveal">
+                    <span class="feature-icon">@Icon("org")</span>
+                    <h3>Reporting lines</h3>
+                    <p>Every employee has a manager, so leave requests reach the right person automatically.</p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <!-- Industries -->
+    <section class="section" id="industries">
+        <div class="container">
+            <header class="section-head reveal">
+                <p class="eyebrow">Industries</p>
+                <h2>One system. Fits your world.</h2>
+            </header>
+            <div class="industries">
+                <article class="industry reveal">
+                    <span class="industry-icon">@Icon("hospital")</span>
+                    <h3>Hospitals &amp; clinics</h3>
+                    <p>Rotating 24×7 rosters for doctors, nurses and support staff. Night duty and double shifts, counted correctly.</p>
+                </article>
+                <article class="industry reveal">
+                    <span class="industry-icon">@Icon("hotel")</span>
+                    <h3>Hotels &amp; hospitality</h3>
+                    <p>Front desk, housekeeping and kitchen across every property — every shift on one screen.</p>
+                </article>
+                <article class="industry reveal">
+                    <span class="industry-icon">@Icon("landmark")</span>
+                    <h3>Public offices</h3>
+                    <p>Fixed office hours, state holiday calendars and a clear record of every change.</p>
+                </article>
+                <article class="industry reveal">
+                    <span class="industry-icon">@Icon("users")</span>
+                    <h3>Small to large</h3>
+                    <p>Start free with one office and up to 20 employees. Grow to thousands across as many offices as you need.</p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="section section-alt">
+        <div class="container">
+            <header class="section-head reveal">
+                <h2>Up and running, simply.</h2>
+            </header>
+            <ol class="steps">
+                <li class="reveal"><span class="step-no">1</span><h3>Tell us about your team</h3><p>Share your offices, shifts and leave rules. We set them up with you.</p></li>
+                <li class="reveal"><span class="step-no">2</span><h3>Connect your devices</h3><p>Link your biometric devices and map each device ID to an employee.</p></li>
+                <li class="reveal"><span class="step-no">3</span><h3>Go live</h3><p>Attendance, shifts and leave run on their own. You get the full picture.</p></li>
+            </ol>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section class="section" id="pricing">
+        <div class="container">
+            <header class="section-head reveal">
+                <p class="eyebrow">Pricing</p>
+                <h2>Try everything. Free for a month.</h2>
+                <p class="lead">No card required. No automatic charges.</p>
+            </header>
+            <div class="plans">
+                <article class="plan plan-featured reveal">
+                    <p class="plan-badge">Free trial</p>
+                    <h3>Starter</h3>
+                    <p class="plan-price"><b>₹0</b><span>for the first month</span></p>
+                    <p class="plan-note">Up to 20 employees · one office</p>
+                    <ul>
+                        <li>@Icon("check", "icon-sm") One office</li>
+                        <li>@Icon("check", "icon-sm") Biometric device sync</li>
+                        <li>@Icon("check", "icon-sm") 24×7 shifts and leave</li>
+                        <li>@Icon("check", "icon-sm") Setup help from our team</li>
+                    </ul>
+                    <a class="btn btn-block" href="#contact" data-interest="FreeTrial">Start free month</a>
+                </article>
+                <article class="plan reveal">
+                    <p class="plan-badge plan-badge-muted">For growing teams</p>
+                    <h3>Business</h3>
+                    <p class="plan-price"><b>Tailored</b><span>to your team size</span></p>
+                    <p class="plan-note">More than 20 employees or multiple sites</p>
+                    <ul>
+                        <li>@Icon("check", "icon-sm") Everything in Starter</li>
+                        <li>@Icon("check", "icon-sm") Multiple offices &amp; branches</li>
+                        <li>@Icon("check", "icon-sm") Any number of employees</li>
+                        <li>@Icon("check", "icon-sm") Help moving your existing data</li>
+                        <li>@Icon("check", "icon-sm") Dedicated onboarding</li>
+                    </ul>
+                    <a class="btn btn-block btn-secondary" href="#contact" data-interest="Pricing">Talk to sales</a>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section section-alt" id="faq">
+        <div class="container container-narrow">
+            <header class="section-head reveal">
+                <h2>Questions, answered.</h2>
+            </header>
+            <div class="faq reveal">
+                <details>
+                    <summary>What happens after the free month?</summary>
+                    <p>We share a plan based on your team size and number of offices. Nothing is charged automatically — you decide whether to continue.</p>
+                </details>
+                <details>
+                    <summary>Which biometric devices can we connect?</summary>
+                    <p>EMS works with biometric devices that export or send attendance logs. Mention your device make and model in the form below and we'll confirm before you start.</p>
+                </details>
+                <details>
+                    <summary>Can we manage several offices or hospitals together?</summary>
+                    <p>Yes, on the Business plan. Each branch has its own address, contacts, shifts and holidays, and you see all of them from one account. The free Starter month covers one office.</p>
+                </details>
+                <details>
+                    <summary>How are night shifts counted?</summary>
+                    <p>A shift that starts at night and ends the next morning is counted for the day it started, so attendance and payroll line up.</p>
+                </details>
+                <details>
+                    <summary>What if a device ID is given to a new employee?</summary>
+                    <p>EMS keeps the history of every device ID with dates. Older punches stay with the previous employee and new punches go to the new one.</p>
+                </details>
+                <details>
+                    <summary>Can deleted data be recovered?</summary>
+                    <p>Yes. Records are never permanently deleted, and every change shows who made it and when.</p>
+                </details>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact & enquiry -->
+    <section class="section contact" id="contact">
+        <div class="container contact-grid">
+            <div class="contact-copy reveal">
+                <p class="eyebrow">Contact us</p>
+                <h2>Let's get your team started.</h2>
+                <p class="lead">Tell us a little about your organization. We'll set up your free month or show you a demo — whichever you prefer.</p>
+                <ol class="next-steps">
+                    <li><span>1</span>We get in touch to understand your offices, shifts and devices.</li>
+                    <li><span>2</span>We set up your account with you — free for the first month.</li>
+                    <li><span>3</span>Your team starts marking attendance and applying for leave.</li>
+                </ol>
+                <ul class="contact-list">
+                    @if (!string.IsNullOrWhiteSpace(company.Email))
+                    {
+                        <li>@Icon("mail")<a href="mailto:@company.Email">@company.Email</a></li>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(company.Phone))
+                    {
+                        <li>@Icon("phone")<a href="tel:@company.Phone.Replace(" ", "")">@company.Phone</a></li>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(company.Address))
+                    {
+                        <li>@Icon("pin")<span>@company.Address</span></li>
+                    }
+                </ul>
+            </div>
+
+            <div class="form-card reveal">
+                @if (sentTo is not null)
+                {
+                    <div class="form-success" role="status" tabindex="-1" id="enquiry-success">
+                        <span class="success-icon">@Icon("check")</span>
+                        <h3>Thank you, @sentTo.</h3>
+                        <p>We've received your enquiry and will be in touch soon.</p>
+                        <a class="link-arrow" href="#top">Back to top @Icon("arrow", "icon-sm")</a>
+                    </div>
+                }
+                else
+                {
+                    <form asp-action="Enquiry" asp-fragment="contact" method="post" novalidate class="form" id="enquiry-form" data-has-errors="@(hasErrors ? "true" : "false")">
+                        <div asp-validation-summary="ModelOnly" class="form-alert" role="alert"></div>
+
+                        <fieldset class="segmented">
+                            <legend>@Html.DisplayNameFor(m => m.Interest)</legend>
+                            @foreach (var option in Html.GetEnumSelectList<EnquiryInterest>())
+                            {
+                                var id = $"interest-{option.Value}";
+                                <input type="radio" asp-for="Interest" value="@Enum.GetName(typeof(EnquiryInterest), int.Parse(option.Value))" id="@id" />
+                                <label for="@id">@option.Text</label>
+                            }
+                        </fieldset>
+
+                        <div class="field-row">
+                            <div class="field">
+                                <label asp-for="Name"></label>
+                                <input asp-for="Name" autocomplete="name" />
+                                <span asp-validation-for="Name" class="field-error"></span>
+                            </div>
+                            <div class="field">
+                                <label asp-for="OrganizationName"></label>
+                                <input asp-for="OrganizationName" autocomplete="organization" />
+                                <span asp-validation-for="OrganizationName" class="field-error"></span>
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field">
+                                <label asp-for="Email"></label>
+                                <input asp-for="Email" type="email" autocomplete="email" inputmode="email" />
+                                <span asp-validation-for="Email" class="field-error"></span>
+                            </div>
+                            <div class="field">
+                                <label asp-for="Phone"></label>
+                                <input asp-for="Phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="+91" />
+                                <span asp-validation-for="Phone" class="field-error"></span>
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field">
+                                <label asp-for="Industry"></label>
+                                <select asp-for="Industry" asp-items="Html.GetEnumSelectList<Industry>()">
+                                    <option value="">Select…</option>
+                                </select>
+                                <span asp-validation-for="Industry" class="field-error"></span>
+                            </div>
+                            <div class="field">
+                                <label asp-for="TeamSize"></label>
+                                <select asp-for="TeamSize" asp-items="Html.GetEnumSelectList<TeamSize>()">
+                                    <option value="">Select…</option>
+                                </select>
+                                <span asp-validation-for="TeamSize" class="field-error"></span>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label asp-for="Message"></label>
+                            <textarea asp-for="Message" rows="4" placeholder="Number of offices, shifts, biometric device model…"></textarea>
+                            <span asp-validation-for="Message" class="field-error"></span>
+                        </div>
+
+                        <div class="hp" aria-hidden="true">
+                            <label for="Website">Leave this field empty</label>
+                            <input asp-for="Website" tabindex="-1" autocomplete="off" />
+                        </div>
+
+                        <button type="submit" class="btn btn-lg btn-block">Send enquiry</button>
+                        <p class="form-note">By sending this form you agree to be contacted about @company.ProductName. See our <a asp-action="Privacy">privacy policy</a>.</p>
+                    </form>
+                }
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer class="footer">
+    <div class="container footer-inner">
+        <div class="footer-brand">
+            <img src="~/img/logo.svg" alt="" width="24" height="24" />
+            <span><b>@company.ProductName</b> — Employee Management System</span>
+        </div>
+        <nav class="footer-links" aria-label="Footer">
+            <a href="#features">Features</a>
+            <a href="#industries">Industries</a>
+            <a href="#pricing">Pricing</a>
+            <a href="#contact">Contact</a>
+            <a asp-action="Privacy">Privacy</a>
+        </nav>
+        <p class="footer-copy">© @DateTime.Now.Year @company.Name. All rights reserved.</p>
+    </div>
+</footer>

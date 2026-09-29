@@ -23,6 +23,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Attendance> Attendances => Set<Attendance>();
     public DbSet<BiometricPunch> BiometricPunches => Set<BiometricPunch>();
     public DbSet<BiometricIdAssignment> BiometricIdAssignments => Set<BiometricIdAssignment>();
+    public DbSet<Enquiry> Enquiries => Set<Enquiry>();
 
     /// <summary>Name of the global soft-delete query filter (lift it with IgnoreQueryFilters([SoftDeleteFilter])).</summary>
     public const string SoftDeleteFilter = "SoftDelete";
@@ -91,6 +92,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             a.HasIndex(x => new { x.OrganizationId, x.AttendanceId }).IsUnique().HasFilter($"\"ValidTo\" IS NULL AND {NotDeleted}");
             a.HasIndex(x => new { x.OrganizationId, x.AttendanceId, x.ValidFrom });
         });
+
+        builder.Entity<Enquiry>().HasIndex(e => new { e.Status, e.CreatedAt });
 
         // Hide soft-deleted rows from every query.
         foreach (var type in builder.Model.GetEntityTypes()
