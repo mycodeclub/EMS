@@ -29,7 +29,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public const string SoftDeleteFilter = "SoftDelete";
 
     // Unique indexes ignore soft-deleted rows, so e.g. a shift code can be reused after deletion.
-    private const string NotDeleted = "\"IsDeleted\" = 0";
+    private const string NotDeleted = "\"IsDeleted\" = false";
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
@@ -81,6 +81,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         builder.Entity<BiometricPunch>(p =>
         {
             // Re-syncing the same device log must not create duplicates (nor revive soft-deleted punches).
+            // Device local time, not UTC: stored without a time zone.
+            p.Property(x => x.PunchTime).HasColumnType("timestamp without time zone");
             p.HasIndex(x => new { x.OrganizationId, x.AttendanceId, x.PunchTime }).IsUnique();
             p.HasIndex(x => x.IsProcessed);
         });
