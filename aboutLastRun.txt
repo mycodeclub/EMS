@@ -1,0 +1,60 @@
+ Stop Task
+dotnet run --no-build · stopped
+
+  Ran 3 shell commands
+
+All tests pass: pages load correctly for both roles, the owner is blocked from /Admin, and cross-organization access to another org's salary slip correctly returns 404 with no warnings. Now I'll commit.
+
+  Ran 2 shell commands
+
+The whole flow works end to end: offer a trial from a lead, the owner gets an email, sets up their organization, and runs staff, attendance and salary slips from their own panel. It's committed as a836f31 on switch-to-postgresql, not pushed. The build has no warnings and the app log is clean. An end-to-end script walked through every step, I reviewed the screens in Chrome, and salary amounts match a hand calculation.
+
+Super admin (/Admin)
+- Left menu: Dashboard, Enquiries, Leads, Customers & trials, Billing.
+- The dashboard has KPI tiles and charts: ries, lead pipeline, customers by industry, and how far each trial has got through setup. Hovering a bar shows its value.
+- Every lead and enquiry has an Offer freeform prefilled from that lead. Submittingit:
+  - creates the organization, a Head officn with a temporary password;
+  - emails the owner to sign in with their own email and change the password;
+  - shows a confirmation page with a previrary password (once).
+- Customers & trials lists the real trials with days left and each one's setup step.
+- Email in development: there's no mail see saved as .eml files in EMS/App_Data/mail. Adding Email:SmtpHost in settings sends them for real.
+
+Customer owner's first sign-in: setup wizard
+1. Choose a new password.
+2. Organization profile (name, GSTIN, address).
+3. "Do you run more than one shift, or ope
+   - Yes: enter each shift's timings. Hospitals and hotels start with Morning, Evening and Night filled in, and
+     night shifts can end after midnight.
+   - No: one general shift.
+   - The timings are saved as the organiza
+4. Add employees, or skip. Codes are assigned automatically (E001, E002, …).
+
+The owner can't reach their panel until the wizard is finished.
+
+Organization panel (/Org)
+- Dashboard: today's present, absent and undance chart, staff by shift, and thismonth's payroll.
+- Employees, Shifts and Organization profi
+- Attendance: a month register where you can go back to earlier months to fill in or correct them. A "Fill empty days" button marks everyone present, witusinesses. Future days are locked.
+- Salary slips: monthly salary is scaled by paid days: absent and unmarked days are unpaid, a half day counts as half. There's a monthly sheet and a prin
+
+Logins for review. These two demo organizal database:
+
+┌──────────────────────┬─────────────────┬────────────────────────────────────────┐
+│        Login         │    Password     │                            What's there                             │
+├──────────────────────┼─────────────────┼────────────────────────────────────────┤
+│ superadmin@ems.local │ SuperAdmin#2026 │ Admin console                                                       │
+├──────────────────────┼─────────────────┼────────────────────────────────────────┤
+│ karthik@example.com  │ Owner#2026      │ Brightpath Engineering: 3 shifts, 4 employees, August attendance    │
+│                      │                 │                                        │
+├──────────────────────┼─────────────────┼─────────────────────────────────────────────────────────────────────┤
+│ farah@example.com    │ Owner#2026      │al): setup just finished                │
+└──────────────────────┴─────────────────┴─────────────────────────────────────────────────────────────────────┘
+
+Not done yet:
+- Enquiries, leads, paying customers, billple data. Only trials and their setupprogress come from the database, and the pages say which is which.
+- Salary slips have no PF, ESI, profession
+- There's no "resend invite" if an owner loses the welcome email.
+- Registration confirmation emails now alsad of showing the confirmation link onscreen.
+- I couldn't check the phone layout: the b, and screenshots were unreliable towardsthe end.
+
+The README now covers this flow and the email settings. The app is still running in my session, so stop it before running dotnet run yourself.
