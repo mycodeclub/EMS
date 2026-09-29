@@ -1,7 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using EMS.Models;
 using EMS.Models.Common;
+using EMS.Services.Import;
 using EMS.Services.Payroll;
+using EMS.Services.Timekeeping;
 
 namespace EMS.Areas.Org.Models;
 
@@ -12,22 +14,49 @@ public record OrgDashboard(
 /// <summary>Month register: one row per employee on the rolls, one cell per day.</summary>
 public record AttendanceSheet(
     int Year, int Month, IReadOnlyList<Employee> Employees,
-    IReadOnlyDictionary<(int EmployeeId, int Day), AttendanceStatus> Marks, bool RoundTheClock)
+    IReadOnlyDictionary<(int EmployeeId, int Day), DayMark> Marks, bool RoundTheClock)
 {
     public int DaysInMonth => DateTime.DaysInMonth(Year, Month);
     public DateOnly First => new(Year, Month, 1);
 
     /// <summary>Short codes used in the register.</summary>
-    public static readonly (AttendanceStatus Status, string Code, string Name)[] Codes =
-    [
-        (AttendanceStatus.Present, "P", "Present"),
-        (AttendanceStatus.Absent, "A", "Absent"),
-        (AttendanceStatus.HalfDay, "HD", "Half day"),
-        (AttendanceStatus.OnLeave, "L", "On leave"),
-        (AttendanceStatus.WeeklyOff, "WO", "Weekly off"),
-        (AttendanceStatus.Holiday, "H", "Holiday"),
-    ];
+    public static readonly (AttendanceStatus Status, string Code, string Name)[] Codes = AttendanceCodes.All;
 }
+
+/// <summary>A marked day in the register, with the punch times when there are any.</summary>
+public record DayMark(AttendanceStatus Status, DateTime? LoginAt, DateTime? LogoffAt, int? WorkedMinutes, bool IsLate)
+{
+    /// <summary>"In 09:02 · Out 18:10 · 9h 08m · Late" for the cell tooltip, or null without punch times.</summary>
+    public string? Summary => LoginAt is not { } login ? null : string.Join(" · ", new[]
+    {
+        $"In {PunchRules.Clock(login)}",
+        LogoffAt is { } logoff ? $"Out {PunchRules.Clock(logoff)}" : "No out time",
+        WorkedMinutes is { } worked ? PunchRules.Duration(worked) : null,
+        IsLate ? "Late" : null,
+    }.Where(p => p is not null));
+}
+
+/// <summary>Day view: punch in / out and status for every employee on the rolls that day.</summary>
+public record AttendanceDay(DateOnly Date, IReadOnlyList<PunchEntry> Entries, bool RoundTheClock)
+{
+    public bool IsToday => Date == DateOnly.FromDateTime(DateTime.Today);
+}
+
+/// <summary>One employee's row in the day view: the saved record, or what was just posted when it had a problem.</summary>
+public class PunchEntry
+{
+    public required Employee Employee { get; init; }
+    public string? In { get; set; }
+    public string? Out { get; set; }
+    public AttendanceStatus? Status { get; set; }
+    public string? Remarks { get; set; }
+    public int? WorkedMinutes { get; set; }
+    public bool IsLate { get; set; }
+    public string? Error { get; set; }
+}
+
+/// <summary>Import page: the result of the last upload (if any) and what the templates need to mention.</summary>
+public record ImportPage(ImportResult? Result, int EmployeeCount, IReadOnlyList<string> ShiftCodes);
 
 public record PayrollMonth(int Year, int Month, IReadOnlyList<PayLine> Lines)
 {

@@ -63,6 +63,18 @@ Anyone can register a normal account from the Register page. It has no admin acc
 
 Salary slips do not apply statutory deductions (PF, ESI, professional tax, TDS) yet.
 
+## Attendance: punch in / out and import
+
+- **Month register** (`/Org/Attendance`): one status per employee per day. A small blue dot marks a day with punch times (hover to see in, out and hours worked); orange means late. Click a date to open that day.
+- **Punch in / out** (`/Org/Attendance/Day`): enter in and out times per employee. Worked time, late arrival and the status (P / HD / A) are worked out from the employee's shift while you type, and can be overridden for leave or holidays.
+  - Late: in time after shift start + grace minutes.
+  - Present from the shift's full-day minutes, half day from its half-day minutes, otherwise absent. In with no out yet counts as present.
+  - Night shifts: attendance belongs to the day the shift starts; an out time earlier than the in time is the next morning.
+- **Import** (`/Org/Import`): employees and attendance from `.csv` or `.xlsx` (up to 5 MB / 20,000 rows). Templates download as Excel or CSV, blank or with sample rows; the Excel template has an Instructions sheet and drop-downs for status, gender and your shift codes. Every row is validated first and nothing is saved if any row has a problem.
+  - Employees: new rows are added (blank codes numbered automatically); existing codes are skipped unless "Update existing employees" is ticked, in which case blank cells keep the current value.
+  - Attendance: one row per employee per day, with an in time, a status, or both. Days already marked are skipped unless "Replace days already marked" is ticked. A *Biometric ID* column can be used instead of *Employee code* for device exports.
+  - Dates are read day first (05-09-2026 is 5 September); `2026-09-05` and Excel date cells also work.
+
 ## Everyday commands
 
 Run these from the `EMS` folder.

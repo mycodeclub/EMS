@@ -12,7 +12,7 @@ public enum LeaveStatus { Pending = 1, Approved, Rejected, Cancelled }
 
 public enum AttendanceStatus { Present = 1, Absent, HalfDay, OnLeave, Holiday, WeeklyOff }
 
-public enum AttendanceSource { Biometric = 1, Manual }
+public enum AttendanceSource { Biometric = 1, Manual, Import }
 
 public enum Industry
 {

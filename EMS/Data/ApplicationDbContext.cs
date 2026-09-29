@@ -82,7 +82,13 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         });
 
         // ShiftId is part of the key so double shifts (common in hospitals) are allowed on the same day.
-        builder.Entity<Attendance>().HasIndex(a => new { a.EmployeeId, a.AttendanceDate, a.ShiftId }).IsUnique().HasFilter(NotDeleted);
+        builder.Entity<Attendance>(a =>
+        {
+            a.HasIndex(x => new { x.EmployeeId, x.AttendanceDate, x.ShiftId }).IsUnique().HasFilter(NotDeleted);
+            // Punch in / out are the time on the office clock, not UTC: stored without a time zone.
+            a.Property(x => x.LoginAt).HasColumnType("timestamp without time zone");
+            a.Property(x => x.LogoffAt).HasColumnType("timestamp without time zone");
+        });
 
         builder.Entity<BiometricPunch>(p =>
         {

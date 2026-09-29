@@ -12,7 +12,11 @@
         <h1>Attendance</h1>
         <p>Mark each day for every employee. Earlier months can be filled in or corrected; future days are locked.</p>
     </div>
-    <partial name="_MonthNav" model="Model.First" />
+    <div class="page-actions">
+        <a class="btn btn-secondary btn-sm" asp-action="Day">Punch in / out</a>
+        <a class="btn btn-secondary btn-sm" asp-controller="Import" asp-action="Index">Import</a>
+        <partial name="_MonthNav" model="Model.First" />
+    </div>
 </header>
 
 @if (Model.Employees.Count == 0)
@@ -34,6 +38,8 @@ else
                     {
                         <li><b>@code</b> @name</li>
                     }
+                    <li><i class="dot" aria-hidden="true"></i> In / out times (hover)</li>
+                    <li><i class="dot dot-late" aria-hidden="true"></i> Late</li>
                 </ul>
                 <span>@Model.Employees.Count employee@(Model.Employees.Count == 1 ? "" : "s")</span>
             </div>
@@ -45,7 +51,16 @@ else
                             @foreach (var day in days)
                             {
                                 var weekend = day.DayOfWeek is DayOfWeek.Sunday;
-                                <th class="@(weekend ? "we" : null)" title="@day.ToString("dddd dd MMM")">@day.Day<br />@day.ToString("ddd")[..2]</th>
+                                <th class="@(weekend ? "we" : null)" title="@day.ToString("dddd dd MMM")">
+                                    @if (day <= today)
+                                    {
+                                        <a asp-action="Day" asp-route-date="@day.ToString("yyyy-MM-dd")" aria-label="In / out times for @day.ToString("dd MMM")">@day.Day<br />@day.ToString("ddd")[..2]</a>
+                                    }
+                                    else
+                                    {
+                                        @day.Day<br />@day.ToString("ddd")[..2]
+                                    }
+                                </th>
                             }
                             <th class="num" title="Paid days so far">Paid</th>
                         </tr>
@@ -65,14 +80,15 @@ else
                                         <td class="off" title="@(day > today ? "Future day" : "Not on the rolls")">·</td>
                                         continue;
                                     }
-                                    var has = Model.Marks.TryGetValue((employee.UniqueId, day.Day), out var status);
-                                    if (has) { paid += PayrollCalculator.PaidWeight(status); }
-                                    <td>
+                                    var has = Model.Marks.TryGetValue((employee.UniqueId, day.Day), out var mark);
+                                    if (has) { paid += PayrollCalculator.PaidWeight(mark!.Status); }
+                                    var punches = mark?.Summary;
+                                    <td class="@(punches is null ? null : mark!.IsLate ? "punched is-late" : "punched")" data-tip="@punches">
                                         <select name="m@(employee.UniqueId)_@day.Day" aria-label="@employee.FullName, @day.ToString("dd MMM")" data-weekend="@(day.DayOfWeek == DayOfWeek.Sunday ? "" : null)">
                                             <option value=""></option>
                                             @foreach (var (value, code, name) in AttendanceSheet.Codes)
                                             {
-                                                <option value="@((int)value)" selected="@(has && status == value)" title="@name">@code</option>
+                                                <option value="@((int)value)" selected="@(has && mark!.Status == value)" title="@name">@code</option>
                                             }
                                         </select>
                                     </td>

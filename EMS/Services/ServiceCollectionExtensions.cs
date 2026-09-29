@@ -1,5 +1,6 @@
 using EMS.Services.Common;
 using EMS.Services.Email;
+using EMS.Services.Import;
 using EMS.Services.Onboarding;
 using Microsoft.AspNetCore.Identity.UI.Services;
 
@@ -16,6 +17,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<OrganizationContext>();
         services.AddScoped<SetupService>();
         services.AddScoped<TrialService>();
+        services.AddScoped<EmployeeImporter>();
+        services.AddScoped<AttendanceImporter>();
         return services;
     }
 }

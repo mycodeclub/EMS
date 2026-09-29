@@ -1,4 +1,4 @@
-// EMS consoles: chart tooltips, the attendance register, and add/remove rows in editable tables.
+// EMS consoles: chart tooltips, the attendance register and day view, and add/remove rows in editable tables.
 (function () {
     'use strict';
 
@@ -28,8 +28,8 @@
     });
     document.addEventListener('focusout', function () { tip.hidden = true; });
 
-    // Attendance register: colour each cell by its value; "fill" marks every empty unlocked cell.
-    document.querySelectorAll('.register select').forEach(function (s) {
+    // Attendance register and day view: colour each status by its value; "fill" marks every empty unlocked cell.
+    document.querySelectorAll('.register select, select.status').forEach(function (s) {
         s.setAttribute('data-v', s.value);
         s.addEventListener('change', function () { s.setAttribute('data-v', s.value); });
     });
@@ -41,6 +41,74 @@
                 s.value = s.hasAttribute('data-weekend') ? weekend : weekday;
                 s.setAttribute('data-v', s.value);
             });
+        });
+    });
+
+    // Punch in / out day view: worked time, late and status update while typing, using the same rules as
+    // PunchRules.cs. The status follows the times until it is changed by hand (for leave, holidays…).
+    function minutes(value) {
+        if (!value) return null;
+        var parts = value.split(':');
+        return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+    }
+    function duration(m) { return m < 60 ? m + 'm' : Math.floor(m / 60) + 'h ' + String(m % 60).padStart(2, '0') + 'm'; }
+
+    document.querySelectorAll('[data-punch-row]').forEach(function (row) {
+        var timeIn = row.querySelector('[data-in]'), timeOut = row.querySelector('[data-out]');
+        var status = row.querySelector('[data-status]'), worked = row.querySelector('[data-worked]');
+        var start = minutes(row.getAttribute('data-start')), end = minutes(row.getAttribute('data-end'));
+        var grace = +(row.getAttribute('data-grace') || 0), full = +(row.getAttribute('data-full') || 0), half = +(row.getAttribute('data-half') || 0);
+
+        function evaluate() {
+            var i = minutes(timeIn.value), o = minutes(timeOut.value);
+            if (i === null) return { text: '\u2014', late: false, status: '' };
+            var late = false;
+            if (start !== null) {
+                // Night shift (ends after midnight): measure from the start the nearest way round the clock.
+                var offset = i - start;
+                if (end !== null && end <= start) {
+                    offset = (offset + 1440) % 1440;
+                    if (offset > 720) offset -= 1440;
+                }
+                late = offset > grace;
+            }
+            if (o === null) return { text: 'No out time', late: late, status: '1' };
+            var m = (o - i + 1440) % 1440;
+            var s = start === null || full <= 0 || m >= full ? '1' : half > 0 && m >= half ? '3' : '2';
+            return { text: duration(m), late: late, status: s };
+        }
+        function update() {
+            var result = evaluate();
+            worked.textContent = result.text + ' ';
+            if (result.late) {
+                var small = document.createElement('small');
+                small.className = 'late';
+                small.textContent = 'Late';
+                worked.appendChild(small);
+            }
+            if (status.hasAttribute('data-auto')) {
+                status.value = result.status;
+                status.setAttribute('data-v', status.value);
+            }
+        }
+
+        // A saved status that matches the times keeps following them.
+        if (status.value === '' || status.value === evaluate().status) status.setAttribute('data-auto', '');
+        status.addEventListener('change', function () {
+            if (status.value === '') status.setAttribute('data-auto', ''); else status.removeAttribute('data-auto');
+        });
+        timeIn.addEventListener('input', update);
+        timeOut.addEventListener('input', update);
+        row.fillFromShift = function () {
+            if (start === null || timeIn.value || status.value) return;
+            timeIn.value = row.getAttribute('data-start');
+            timeOut.value = row.getAttribute('data-end');
+            update();
+        };
+    });
+    document.querySelectorAll('[data-fill-shift]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            document.querySelectorAll('[data-punch-row]').forEach(function (row) { row.fillFromShift && row.fillFromShift(); });
         });
     });
 

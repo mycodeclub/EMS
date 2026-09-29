@@ -1,0 +1,87 @@
+@model (EMS.Services.Import.ImportKind Kind, ImportPage Page)
+@using EMS.Services.Import
+@using EMS.Services.Timekeeping
+@{
+    var kind = Model.Kind;
+    var employees = kind == ImportKind.Employees;
+    var columns = employees ? EmployeeImporter.Columns : AttendanceImporter.Columns;
+    var id = kind.ToString().ToLowerInvariant();
+}
+<section class="card" aria-labelledby="import-@id">
+    <div class="card-head">
+        <h2 id="import-@id">@(employees ? "Employees" : "Attendance")</h2>
+        <span>@(employees ? $"{Model.Page.EmployeeCount} on file" : "Punch in / out and status per day")</span>
+    </div>
+    <div class="card-body">
+        <div class="import-step">
+            <h3>1. Download a template</h3>
+            <form method="get" asp-action="Template">
+                <input type="hidden" name="kind" value="@kind" />
+                <div class="inline-options" role="radiogroup" aria-label="Template contents">
+                    <label><input type="radio" name="samples" value="false" checked /> Headings only</label>
+                    <label><input type="radio" name="samples" value="true" /> With sample rows</label>
+                </div>
+                <div class="page-actions">
+                    <button type="submit" name="format" value="xlsx" class="btn btn-secondary btn-sm">Download Excel</button>
+                    <button type="submit" name="format" value="csv" class="btn btn-secondary btn-sm">Download CSV</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="import-step">
+            <h3>2. Fill it in</h3>
+            <p>
+                @if (employees)
+                {
+                    @:One row per employee. Only first name and date of joining are required; blank codes are numbered automatically.
+                    @if (Model.Page.ShiftCodes.Count > 0)
+                    {
+                        @: Shift codes: @string.Join(", ", Model.Page.ShiftCodes).
+                    }
+                }
+                else
+                {
+                    @:One row per employee per day. Give an in time, a status, or both; with times only, the status comes from the employee's shift.
+                    @: Codes: @string.Join(", ", AttendanceCodes.All.Select(c => $"{c.Code} {c.Name.ToLowerInvariant()}")).
+                }
+            </p>
+            <details class="chart-table">
+                <summary>Columns</summary>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>Column</th><th>Required</th><th>What to enter</th></tr></thead>
+                        <tbody>
+                            @foreach (var column in columns)
+                            {
+                                <tr>
+                                    <td>@column.Header</td>
+                                    <td>@(column.Required ? "Yes" : "")</td>
+                                    <td style="white-space:normal">@column.Help</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </details>
+        </div>
+
+        <div class="import-step">
+            <h3>3. Upload</h3>
+            <form method="post" asp-action="@kind" enctype="multipart/form-data">
+                <input type="file" name="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required aria-label="@(employees ? "Employees" : "Attendance") file" />
+                <div class="inline-options">
+                    @if (employees)
+                    {
+                        <label><input type="checkbox" name="updateExisting" value="true" /> Update existing employees (matched by employee code; blank cells keep the current value)</label>
+                    }
+                    else
+                    {
+                        <label><input type="checkbox" name="replaceExisting" value="true" /> Replace days already marked</label>
+                    }
+                </div>
+                <button type="submit" class="btn btn-sm">Import @(employees ? "employees" : "attendance")</button>
+                <p style="margin-top:8px;font-size:12px" class="muted">.csv or .xlsx, up to 5 MB and @TabularFile.MaxRows.ToString("N0") rows. Every row is checked first; nothing is saved if any row has a problem.</p>
+            </form>
+        </div>
+    </div>
+</section>

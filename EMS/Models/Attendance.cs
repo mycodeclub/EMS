@@ -15,7 +15,7 @@ public class Attendance : AuditableEntity
     /// <summary>Date the shift started. A 22:00-06:00 shift logged out on the 2nd still belongs to the 1st.</summary>
     public DateOnly AttendanceDate { get; set; }
 
-    /// <summary>Local (device) time.</summary>
+    /// <summary>Punch in, local (office clock) time. For a night shift, punch out is on the next calendar day.</summary>
     public DateTime? LoginAt { get; set; }
     public DateTime? LogoffAt { get; set; }
     public int? WorkedMinutes { get; set; }

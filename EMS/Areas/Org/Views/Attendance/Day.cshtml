@@ -1,0 +1,138 @@
+@model AttendanceDay
+@using EMS.Services.Timekeeping
+@{
+    ViewData["Title"] = $"In / out {Model.Date:dd MMM yyyy}";
+    var previous = Model.Date.AddDays(-1);
+    var next = Model.Date.AddDays(1);
+    var hasNext = next <= DateOnly.FromDateTime(DateTime.Today);
+    var entries = Model.Entries;
+    int Count(params AttendanceStatus[] statuses) => entries.Count(e => e.Status is { } s && statuses.Contains(s));
+    List<EMS.Models.Admin.StatTile> stats =
+    [
+        new("Present", Count(AttendanceStatus.Present, AttendanceStatus.HalfDay).ToString(), $"{Count(AttendanceStatus.HalfDay)} half day"),
+        new("Late", entries.Count(e => e.IsLate).ToString(), "After the shift's grace time"),
+        new("Absent", Count(AttendanceStatus.Absent).ToString(), $"{Count(AttendanceStatus.OnLeave)} on leave"),
+        new("Not marked", entries.Count(e => e.Status is null).ToString(), $"of {entries.Count} on the rolls"),
+    ];
+}
+
+<header class="page-head">
+    <div>
+        <h1>Punch in / out</h1>
+        <p>@Model.Date.ToString("dddd, dd MMMM yyyy") · Enter the in and out times; the status fills in from each employee's shift. Change it for leave, holidays or exceptions.</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-secondary btn-sm" asp-action="Index" asp-route-year="@Model.Date.Year" asp-route-month="@Model.Date.Month">Month register</a>
+        <nav class="month-nav" aria-label="Day">
+            <a class="btn btn-secondary btn-sm" asp-action="Day" asp-route-date="@previous.ToString("yyyy-MM-dd")" aria-label="Previous day">‹ @previous.ToString("dd MMM")</a>
+            <strong>@(Model.IsToday ? "Today" : Model.Date.ToString("ddd dd MMM"))</strong>
+            @if (hasNext)
+            {
+                <a class="btn btn-secondary btn-sm" asp-action="Day" asp-route-date="@next.ToString("yyyy-MM-dd")" aria-label="Next day">@next.ToString("dd MMM") ›</a>
+            }
+            else
+            {
+                <span class="btn btn-secondary btn-sm" aria-disabled="true" style="opacity:.4">@next.ToString("dd MMM") ›</span>
+            }
+        </nav>
+    </div>
+</header>
+
+@if (entries.Count == 0)
+{
+    <section class="card">
+        <div class="empty">
+            <p>No employees were on the rolls on @Model.Date.ToString("dd MMMM yyyy").</p>
+            <p><a class="btn btn-sm" asp-controller="Employees" asp-action="Create">Add employee</a></p>
+        </div>
+    </section>
+}
+else
+{
+    <partial name="_Stats" model="stats" />
+
+    <form method="post" asp-action="Day" asp-route-date="@Model.Date.ToString("yyyy-MM-dd")" novalidate>
+        <section class="card">
+            <div class="card-head">
+                <ul class="key" aria-label="Codes">
+                    @foreach (var (_, code, name) in AttendanceCodes.All)
+                    {
+                        <li><b>@code</b> @name</li>
+                    }
+                </ul>
+                <span>@entries.Count employee@(entries.Count == 1 ? "" : "s")</span>
+            </div>
+            <div class="table-wrap">
+                <table class="editor punches">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Shift</th>
+                            <th>In</th>
+                            <th>Out</th>
+                            <th>Worked</th>
+                            <th>Status</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var entry in entries)
+                        {
+                            var e = entry.Employee;
+                            var shift = e.Shift;
+                            var id = e.UniqueId;
+                            <tr data-punch-row
+                                data-start="@(shift is null ? null : PunchRules.Clock(shift.StartTime))"
+                                data-end="@(shift is null ? null : PunchRules.Clock(shift.EndTime))"
+                                data-grace="@shift?.GraceMinutes" data-full="@shift?.FullDayMinutes" data-half="@shift?.HalfDayMinutes"
+                                class="@(entry.Error is null ? null : "has-error")">
+                                <td>@e.FullName<small>@e.EmpCode@(e.Designation is null ? "" : $" · {e.Designation}")</small></td>
+                                <td>
+                                    @if (shift is null)
+                                    {
+                                        <span class="muted">No fixed shift</span>
+                                    }
+                                    else
+                                    {
+                                        @shift.Name<small>@PunchRules.Clock(shift.StartTime)–@PunchRules.Clock(shift.EndTime)</small>
+                                    }
+                                </td>
+                                <td><input type="time" name="in@(id)" value="@entry.In" class="w-time" aria-label="@e.FullName in time" data-in /></td>
+                                <td><input type="time" name="out@(id)" value="@entry.Out" class="w-time" aria-label="@e.FullName out time" data-out /></td>
+                                <td class="worked" data-worked>
+                                    @(entry.WorkedMinutes is { } worked ? PunchRules.Duration(worked) : entry.In is null ? "—" : "No out time")
+                                    @if (entry.IsLate)
+                                    {
+                                        <small class="late">Late</small>
+                                    }
+                                </td>
+                                <td>
+                                    <select name="s@(id)" class="status" aria-label="@e.FullName status" data-status>
+                                        <option value=""></option>
+                                        @foreach (var (value, code, name) in AttendanceCodes.All)
+                                        {
+                                            <option value="@((int)value)" selected="@(entry.Status == value)" title="@name">@code</option>
+                                        }
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="text" name="r@(id)" value="@entry.Remarks" maxlength="500" class="w-remarks" aria-label="@e.FullName remarks" />
+                                    @if (entry.Error is not null)
+                                    {
+                                        <small class="field-validation-error">@entry.Error</small>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="sticky-actions">
+                <button type="button" class="btn btn-secondary btn-sm" data-fill-shift>Fill empty rows with shift times</button>
+                <span class="hint" style="font-size:12px;color:var(--muted)">Out earlier than in is the next morning (night shift). Clear a whole row to unmark the day.</span>
+                <span class="spacer"></span>
+                <button type="submit" class="btn">Save</button>
+            </div>
+        </section>
+    </form>
+}

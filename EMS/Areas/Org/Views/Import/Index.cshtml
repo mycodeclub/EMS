@@ -1,0 +1,84 @@
+@model ImportPage
+@using EMS.Services.Import
+@{
+    ViewData["Title"] = "Import";
+    var result = Model.Result;
+    const int shownErrors = 200;
+}
+
+<header class="page-head">
+    <div>
+        <h1>Import</h1>
+        <p>Add employees and attendance in bulk from a CSV or Excel file. Download a template, fill it in, and upload it.</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-secondary btn-sm" asp-controller="Employees" asp-action="Index">Employees</a>
+        <a class="btn btn-secondary btn-sm" asp-controller="Attendance" asp-action="Index">Attendance</a>
+    </div>
+</header>
+
+@if (result is not null)
+{
+    var what = result.Kind == ImportKind.Employees ? "employee" : "attendance day";
+    if (result.Succeeded)
+    {
+        <p class="alert alert-success" role="status">
+            Imported @(string.IsNullOrEmpty(result.FileName) ? "the file" : result.FileName):
+            @result.Added @what@(result.Added == 1 ? "" : "s") added@(result.Updated > 0 ? $", {result.Updated} updated" : "")@(result.Skipped > 0 ? $", {result.Skipped} skipped" : "").
+            @if (result.Kind == ImportKind.Employees)
+            {
+                <a asp-controller="Employees" asp-action="Index">View employees</a>
+            }
+            else
+            {
+                <a asp-controller="Attendance" asp-action="Index">View attendance</a>
+            }
+        </p>
+        foreach (var note in result.Notes)
+        {
+            <p class="notice" role="note">@note</p>
+        }
+    }
+    else
+    {
+        <section class="card" role="alert">
+            <div class="card-head">
+                <h2>Nothing was imported</h2>
+                <span>@result.FileName</span>
+            </div>
+            <div class="card-body">
+                <p>@(result.Errors.Any(e => e.Row > 0)
+                    ? $"{result.Errors.Select(e => e.Row).Distinct().Count()} row{(result.Errors.Select(e => e.Row).Distinct().Count() == 1 ? " has" : "s have")} problems. Fix them in your file and upload it again; no rows are saved until the whole file is correct."
+                    : "Fix the file and upload it again.")</p>
+                @foreach (var note in result.Notes)
+                {
+                    <p class="muted" style="margin-top:6px;font-size:13px">@note</p>
+                }
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th class="num">Row</th><th>Column</th><th>Problem</th></tr></thead>
+                    <tbody>
+                        @foreach (var error in result.Errors.Take(shownErrors))
+                        {
+                            <tr>
+                                <td class="num">@(error.Row > 0 ? error.Row : "—")</td>
+                                <td>@(error.Column ?? "—")</td>
+                                <td style="white-space:normal">@error.Message</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (result.Errors.Count > shownErrors)
+            {
+                <div class="card-body muted" style="font-size:13px">…and @(result.Errors.Count - shownErrors) more.</div>
+            }
+        </section>
+    }
+}
+
+<div class="grid-2">
+    <partial name="_ImportCard" model="(ImportKind.Employees, Model)" />
+    <partial name="_ImportCard" model="(ImportKind.Attendance, Model)" />
+</div>
