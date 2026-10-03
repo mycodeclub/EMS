@@ -165,3 +165,18 @@ body.auth {
 .auth-top-links { display: flex; align-items: center; gap: 20px; }
 .auth-top-links form { margin: 0; }
 .auth .btn-link.auth-home { font-size: 14px; color: var(--muted); }
+
+/* Live demo logins (sign-in page) */
+.auth-demo { margin-top: 28px; padding: 18px; border-radius: 14px; background: #fff; border: 1px solid #ececf0; }
+.auth-demo h2 { font-size: 17px; margin: 0 0 4px; }
+.auth-demo p { margin: 0 0 12px; font-size: 14px; color: var(--muted); }
+.auth-demo code { color: var(--text); font-size: 14px; }
+.auth-demo-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.auth-demo-login {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0;
+    padding: 10px 12px; border: 1px solid #d2d2d7; border-radius: 12px; background: var(--bg);
+    font: inherit; text-align: left; cursor: pointer; color: var(--text);
+}
+.auth-demo-login:hover { border-color: var(--accent); background: #fff; }
+.auth-demo-login b { font-size: 15px; font-weight: 600; }
+.auth-demo-login span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--muted); }

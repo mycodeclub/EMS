@@ -24,6 +24,9 @@ public class Organization : AuditableEntity
 
     public bool IsActive { get; set; } = true;
 
+    /// <summary>The public demo organization: its data and logins are rebuilt every night by DemoSeeder.</summary>
+    public bool IsDemo { get; set; }
+
     public Industry? Industry { get; set; }
 
     /// <summary>Login of the customer's owner/admin (OrgAdmin role), created when the super admin offers a trial.</summary>

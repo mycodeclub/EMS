@@ -5,6 +5,8 @@ using EMS.Controllers;
 using EMS.Data;
 using EMS.Models.Landing;
 using EMS.Services;
+using EMS.Services.Auth;
+using EMS.Services.Demo;
 using EMS.Services.Email;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +21,14 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
+builder.Services.AddImpersonation();
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy(NotDemoPolicy, policy => policy.RequireAssertion(context => !context.User.HasClaim(c => c.Type == DemoSeeder.DemoClaim)));
+// The demo logins are shared: visitors must not change their password, email or account.
+builder.Services.AddRazorPages(options => options.Conventions.AuthorizeAreaFolder("Identity", "/Account/Manage", NotDemoPolicy));
+builder.Services.Configure<DemoOptions>(builder.Configuration.GetSection(DemoOptions.Section));
+builder.Services.AddScoped<DemoSeeder>();
+builder.Services.AddHostedService<DemoResetService>();
 builder.Services.Configure<SuperAdminOptions>(builder.Configuration.GetSection(SuperAdminOptions.Section));
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection(EmailOptions.Section));
 builder.Services.AddControllersWithViews();
@@ -60,6 +70,7 @@ app.UseHttpsRedirection();
 app.UseRouting();
 app.UseRateLimiter();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();
@@ -78,3 +89,8 @@ app.MapRazorPages()
    .WithStaticAssets();
 
 app.Run();
+
+public partial class Program
+{
+    private const string NotDemoPolicy = "NotDemo";
+}

@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authorization;
+using EMS.Models.Common;
 using EMS.Areas.Org.Models;
 using EMS.Data;
 using EMS.Models;
@@ -14,6 +16,7 @@ namespace EMS.Areas.Org.Controllers;
 /// Monthly attendance register and the day view for punch in / out times.
 /// Any past day can be filled in or corrected; future days are locked.
 /// </summary>
+[Authorize(Roles = AppRoles.PeopleManagers)]
 public class AttendanceController(OrganizationContext context, ApplicationDbContext db) : OrgController(context)
 {
     public async Task<IActionResult> Index(int? year, int? month, CancellationToken ct)

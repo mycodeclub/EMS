@@ -14,7 +14,7 @@ using Microsoft.Extensions.Options;
 
 namespace EMS.Services.Onboarding;
 
-public record TrialRow(int Id, string Organization, string OwnerEmail, Industry? Industry, DateTime OfferedAt, DateOnly? TrialEndsOn, OnboardingStep Step, int Employees);
+public record TrialRow(int Id, string Organization, string OwnerEmail, Industry? Industry, DateTime OfferedAt, DateOnly? TrialEndsOn, OnboardingStep Step, int Employees, bool IsDemo = false);
 
 public record TrialOffer(Organization Organization, string OwnerEmail, string TemporaryPassword, string EmailSubject, string EmailHtml, bool EmailSent);
 
@@ -90,18 +90,18 @@ public class TrialService(
         return ServiceResult<TrialOffer>.Success(new TrialOffer(organization, ownerEmail, password, subject, html, sent));
     }
 
-    /// <summary>Every customer organization with an owner login, newest first, with how far onboarding has got.</summary>
+    /// <summary>Every customer organization with an owner login (the demo first, then newest first), with how far onboarding has got.</summary>
     public async Task<List<TrialRow>> TrialsAsync(CancellationToken ct = default)
     {
         var invited = db.UserClaims.Where(c => c.ClaimType == MustChangePasswordClaim).Select(c => c.UserId);
         var rows = await db.Organizations
             .Where(o => o.OwnerUserId != null)
-            .OrderByDescending(o => o.CreatedAt)
+            .OrderByDescending(o => o.IsDemo).ThenByDescending(o => o.CreatedAt)
             .Select(o => new
             {
                 o.UniqueId, o.Name, OwnerEmail = o.Owner!.Email, o.Industry, o.CreatedAt, o.TrialEndsOn,
                 Invited = invited.Contains(o.OwnerUserId!), HasProfile = o.Address.Line1 != "",
-                o.OperatesInShifts, o.OnboardingCompletedAt, Employees = o.Employees.Count(),
+                o.OperatesInShifts, o.OnboardingCompletedAt, Employees = o.Employees.Count(), o.IsDemo,
             })
             .ToListAsync(ct);
 
@@ -111,7 +111,7 @@ public class TrialService(
             : o.OperatesInShifts is null ? OnboardingStep.Shifts
             : o.OnboardingCompletedAt is null ? OnboardingStep.Employees
             : OnboardingStep.Done,
-            o.Employees)).ToList();
+            o.Employees, o.IsDemo)).ToList();
     }
 
     /// <summary>Owner emails of organizations that already have a trial or subscription.</summary>

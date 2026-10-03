@@ -1,5 +1,6 @@
 @using Microsoft.Extensions.Options
 @using EMS.Models.Landing
+@using EMS.Services.Auth
 @inject IOptions<CompanyOptions> CompanyOptions
 @{
     // Layout for the super admin console and the organization admin panel: left menu + page.
@@ -9,6 +10,7 @@
     var label = ViewData["OrganizationName"] as string ?? ViewData["ConsoleLabel"] as string ?? "Admin";
     var message = TempData["Message"] as string;
     var error = TempData["Error"] as string;
+    var impersonator = User.FindFirst(Impersonation.ImpersonatorNameClaim)?.Value;
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -35,13 +37,33 @@
             </nav>
             <div class="side-foot">
                 <span title="Signed in as">@User.Identity?.Name</span>
-                <form method="post" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Content("~/")">
-                    <button type="submit" class="btn btn-secondary btn-sm">Sign out</button>
-                </form>
+                @if (impersonator is not null)
+                {
+                    <form method="post" asp-area="Org" asp-controller="Impersonation" asp-action="End">
+                        <button type="submit" class="btn btn-secondary btn-sm">End session</button>
+                    </form>
+                }
+                else
+                {
+                    <form method="post" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Content("~/")">
+                        <button type="submit" class="btn btn-secondary btn-sm">Sign out</button>
+                    </form>
+                }
             </div>
         </aside>
         <main id="main" class="main">
             <div class="main-inner">
+                @if (impersonator is not null)
+                {
+                    <form class="notice notice-warn impersonating" role="note" method="post" asp-area="Org" asp-controller="Impersonation" asp-action="End">
+                        <span>You are viewing <b>@label</b> as its admin (<b>@User.Identity?.Name</b>). Changes you make here are saved under your super admin account, @impersonator.</span>
+                        <button type="submit" class="btn btn-secondary btn-sm">End session</button>
+                    </form>
+                }
+                else if (ViewData["IsDemo"] is true)
+                {
+                    <p class="notice" role="note">This is the public demo. Try anything: all changes are discarded and the demo is rebuilt every night at midnight.</p>
+                }
                 @if (message is not null)
                 {
                     <p class="alert alert-success" role="status">@message</p>

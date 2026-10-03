@@ -63,6 +63,15 @@ public record PayrollMonth(int Year, int Month, IReadOnlyList<PayLine> Lines)
     public DateOnly First => new(Year, Month, 1);
 }
 
+/// <summary>Self-service: the signed-in employee's days in a month (up to today) and pay for it.</summary>
+public record MyMonth(int Year, int Month, Employee? Employee, IReadOnlyList<MyDay> Days, PayLine? Pay)
+{
+    public DateOnly First => new(Year, Month, 1);
+}
+
+/// <summary>One day on the rolls; Record is null when the day is not marked yet.</summary>
+public record MyDay(DateOnly Date, Attendance? Record);
+
 public class EmployeeInput
 {
     public int? Id { get; set; }

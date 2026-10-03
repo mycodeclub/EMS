@@ -48,9 +48,34 @@
     </form>
 }
 
+@if (Model.Demo.Enabled)
+{
+    <section class="auth-demo" aria-labelledby="demo-title">
+        <h2 id="demo-title">Try the live demo</h2>
+        <p>Sign in to <b>@EMS.Services.Demo.DemoSeeder.OrganizationName</b> as any role. Password for all: <code>@Model.Demo.Password</code>. Changes are reset every midnight.</p>
+        <div class="auth-demo-list">
+            @foreach (var login in EMS.Services.Demo.DemoSeeder.Logins)
+            {
+                <button type="button" class="auth-demo-login" data-email="@login.Email" data-password="@Model.Demo.Password" title="@login.Description">
+                    <b>@login.Label</b>
+                    <span>@login.Email</span>
+                </button>
+            }
+        </div>
+    </section>
+}
+
 <p class="auth-switch">New to EMS? <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl">Create an account</a></p>
 <p class="auth-small"><a id="resend-confirmation" asp-page="./ResendEmailConfirmation">Didn't get the confirmation email?</a></p>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Demo logins: fill the form and sign in.
+        document.querySelectorAll('.auth-demo-login').forEach(button => button.addEventListener('click', () => {
+            document.getElementById('Input_Email').value = button.dataset.email;
+            document.getElementById('Input_Password').value = button.dataset.password;
+            document.getElementById('account').requestSubmit();
+        }));
+    </script>
 }

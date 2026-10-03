@@ -7,8 +7,11 @@ using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace EMS.Areas.Org.Controllers;
 
-/// <summary>Base for the organization admin panel: the signed-in owner's organization, once onboarding is finished.</summary>
-[Area("Org"), Authorize(Roles = AppRoles.OrgAdmin)]
+/// <summary>
+/// Base for the organization panel: the signed-in user's organization, once onboarding is finished. Each controller
+/// narrows the roles allowed (see AppRoles); the owner (OrgAdmin) can use every page.
+/// </summary>
+[Area("Org"), Authorize(Roles = AppRoles.OrgPanel)]
 public abstract class OrgController(OrganizationContext context) : Controller
 {
     protected Organization Organization { get; private set; } = null!;
@@ -25,6 +28,7 @@ public abstract class OrgController(OrganizationContext context) : Controller
         Organization = organization;
         ViewData["OrganizationName"] = organization.Name;
         ViewData["TrialEndsOn"] = organization.TrialEndsOn;
+        ViewData["IsDemo"] = organization.IsDemo;
         await next();
     }
 

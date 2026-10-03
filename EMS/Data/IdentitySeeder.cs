@@ -16,7 +16,7 @@ public static class IdentitySeeder
         var users = provider.GetRequiredService<UserManager<IdentityUser>>();
         var admin = provider.GetRequiredService<IOptions<SuperAdminOptions>>().Value;
 
-        foreach (var role in new[] { AppRoles.SuperAdmin, AppRoles.OrgAdmin })
+        foreach (var role in AppRoles.All)
         {
             if (!await roles.RoleExistsAsync(role))
                 EnsureSucceeded(await roles.CreateAsync(new IdentityRole(role)), $"create the {role} role");

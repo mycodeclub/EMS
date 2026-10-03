@@ -44,9 +44,28 @@ On startup the app creates the `SuperAdmin` and `OrgAdmin` roles and the super a
 |-------------|------------------------|-------------------|
 | Super admin | `superadmin@ems.local` | `SuperAdmin#2026` |
 
+### Public demo logins
+
+The app keeps one demo organization, **Greenfield Institute (Demo)**, with 12 employees on three shifts (General 09:00–17:30, Early 07:00–15:00, Night 22:00–06:00) and attendance from the 1st of the month three months back until yesterday. These logins are listed on the sign-in page, where each one signs in with one click:
+
+| Role | Email | Password | Sees |
+|------|-------|----------|------|
+| Admin (owner) | `admin@greenfield.test` | `Demo@1234` | Every page of the organization panel |
+| HR | `hr@greenfield.test` | `Demo@1234` | Dashboard, employees, attendance, punch in / out, shifts, import, own attendance & slips |
+| Accounts | `accounts@greenfield.test` | `Demo@1234` | Dashboard, salary slips, own attendance & slips |
+| Employee | `employee@greenfield.test` | `Demo@1234` | Own attendance & salary slips |
+
+- The demo is rebuilt at midnight (`Demo:TimeZone`, default `Asia/Kolkata`), and on startup if it was last built before today. Only the demo organization and these four logins are deleted and recreated; real customers are never touched. The super admin can also click **Reset demo now** on *Customers & trials*.
+- Demo logins cannot open the account pages (change password, email or delete account).
+- Settings: `Demo:Enabled` (turn the demo off), `Demo:Password`, `Demo:TimeZone`.
+
+### Sign in as a customer
+
+On **Customers & trials**, **Sign in as admin ↗** opens that organization's panel in a new tab, signed in as its owner. It uses a separate cookie that only `/Org` receives, so the admin console in the first tab stays signed in. A banner shows while you are viewing as the customer, changes are recorded under the super admin's id, and **End session** (or signing out of the admin console) ends it. The session lasts at most 2 hours. Only organizations that finished setup can be opened.
+
 > These credentials are for local development only. The password lives in `appsettings.Development.json`. In any other environment set `SuperAdmin__Email` and `SuperAdmin__Password` (and `ConnectionStrings__DefaultConnection`) as environment variables. An existing account keeps its password; changing the setting later does not reset it.
 
-After signing in, the super admin lands on the admin console at `/Admin`: a dashboard with charts, **Enquiries**, **Leads**, **Customers & trials** and **Billing**. Enquiries (from the website contact form) and free trials come from the database. Leads, paying customers and billing are not stored yet, so those screens are empty. The app creates no sample or demo records.
+After signing in, the super admin lands on the admin console at `/Admin`: a dashboard with charts, **Enquiries**, **Leads**, **Customers & trials** and **Billing**. Enquiries (from the website contact form) and free trials come from the database. Leads, paying customers and billing are not stored yet, so those screens are empty. Apart from the public demo organization below, the app creates no sample records.
 
 Anyone can register a normal account from the Register page. It has no admin access.
 

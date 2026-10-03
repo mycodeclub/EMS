@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authorization;
+using EMS.Models.Common;
 using EMS.Controllers;
 using EMS.Models.Onboarding;
 using EMS.Services.Onboarding;
@@ -5,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace EMS.Areas.Org.Controllers;
 
+[Authorize(Roles = AppRoles.PeopleManagers)]
 public class ShiftsController(OrganizationContext context, SetupService setup) : OrgController(context)
 {
     public async Task<IActionResult> Index(CancellationToken ct)

@@ -1,10 +1,14 @@
 using System.Globalization;
+using EMS.Data;
 using EMS.Models;
 using EMS.Models.Admin;
 using EMS.Models.Common;
+using EMS.Services.Auth;
 using EMS.Services.Common;
+using EMS.Services.Demo;
 using EMS.Services.Onboarding;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,11 +19,18 @@ namespace EMS.Controllers;
 /// not stored yet, so those screens are empty.
 /// </summary>
 [Authorize(Roles = AppRoles.SuperAdmin)]
-public class AdminController(TrialService trials, ICrudService<Enquiry> enquiries) : Controller
+public class AdminController(
+    TrialService trials,
+    ICrudService<Enquiry> enquiries,
+    ApplicationDbContext db,
+    SignInManager<IdentityUser> signIn,
+    DemoSeeder demo,
+    ILogger<AdminController> logger) : Controller
 {
     public async Task<IActionResult> Index(CancellationToken ct)
     {
-        var live = await trials.TrialsAsync(ct);
+        // The public demo is not a real trial.
+        var live = (await trials.TrialsAsync(ct)).Where(t => !t.IsDemo).ToList();
         var weeks = await EnquiriesByWeekAsync(8, ct);
         var newEnquiries = await enquiries.Query().CountAsync(e => e.Status == EnquiryStatus.New, ct);
         var totalEnquiries = await enquiries.Query().CountAsync(ct);
@@ -101,6 +112,36 @@ public class AdminController(TrialService trials, ICrudService<Enquiry> enquirie
             new("Due", Total(InvoiceStatus.Due).ToRupees(), "Not yet past due date"),
             new("Overdue", Total(InvoiceStatus.Overdue).ToRupees(), $"{rows.Count(r => r.Status == InvoiceStatus.Overdue)} invoices"),
         ], rows));
+    }
+
+    /// <summary>
+    /// Opens the customer's organization panel as its owner (in a new tab). Uses a separate cookie for /Org only, so this
+    /// super admin session keeps working.
+    /// </summary>
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> SignInAs(int id, CancellationToken ct)
+    {
+        var organization = await db.Organizations.Include(o => o.Owner).FirstOrDefaultAsync(o => o.UniqueId == id, ct);
+        if (organization?.Owner is not { } owner) return NotFound();
+        if (organization.OnboardingCompletedAt is null)
+        {
+            TempData["Error"] = $"{organization.Name} has not finished setup yet, so there is no panel to open.";
+            return RedirectToAction(nameof(Customers));
+        }
+
+        await Impersonation.SignInAsync(HttpContext, signIn, owner, User);
+        logger.LogInformation("{Admin} signed in as {Owner} ({Organization}).", User.Identity?.Name, owner.Email, organization.Name);
+        return RedirectToAction("Index", "Dashboard", new { area = "Org" });
+    }
+
+    /// <summary>Rebuilds the demo organization now instead of waiting for midnight.</summary>
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResetDemo(CancellationToken ct)
+    {
+        if (!demo.Enabled) return NotFound();
+        await demo.ResetAsync(ct);
+        TempData["Message"] = "Demo organization reset. Visitors' changes were discarded and the attendance runs up to yesterday.";
+        return RedirectToAction(nameof(Customers));
     }
 
     /// <summary>Free-trial form, prefilled from the lead or enquiry with this email when there is one.</summary>

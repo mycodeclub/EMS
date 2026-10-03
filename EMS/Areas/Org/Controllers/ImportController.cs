@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authorization;
+using EMS.Models.Common;
 using EMS.Areas.Org.Models;
 using EMS.Data;
 using EMS.Services.Import;
@@ -8,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 namespace EMS.Areas.Org.Controllers;
 
 /// <summary>Bulk import of employees and attendance from CSV or Excel, with downloadable templates.</summary>
+[Authorize(Roles = AppRoles.PeopleManagers)]
 public class ImportController(
     OrganizationContext context, ApplicationDbContext db, SetupService setup,
     EmployeeImporter employeeImporter, AttendanceImporter attendanceImporter, ILogger<ImportController> logger)

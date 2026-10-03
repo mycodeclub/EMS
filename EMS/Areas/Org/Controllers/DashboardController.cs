@@ -15,6 +15,9 @@ public class DashboardController(OrganizationContext context, ApplicationDbConte
 
     public async Task<IActionResult> Index(CancellationToken ct)
     {
+        // Employees without a manager role see only their own page.
+        if (!AppRoles.OrgManagers.Split(',').Any(User.IsInRole)) return RedirectToAction("Index", "My");
+
         var today = DateOnly.FromDateTime(DateTime.Today);
         var from = today.AddDays(1 - ChartDays);
 

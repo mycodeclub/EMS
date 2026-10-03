@@ -9,7 +9,7 @@
 }
 
 <div class="page-head no-print">
-    <a class="btn btn-ghost" asp-action="Index" asp-route-year="@Model.Year" asp-route-month="@Model.Month">‹ All salary slips</a>
+    <a class="btn btn-ghost" asp-action="Index" asp-route-year="@Model.Year" asp-route-month="@Model.Month">@(ViewData["BackLabel"] as string ?? "‹ All salary slips")</a>
     <div class="page-actions">
         <button type="button" class="btn" onclick="window.print()">Print / save as PDF</button>
     </div>

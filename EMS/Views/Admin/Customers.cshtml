@@ -1,4 +1,5 @@
 @model CustomersPage
+@using EMS.Services.Onboarding
 @{
     ViewData["Title"] = "Customers & trials";
 }
@@ -6,9 +7,15 @@
 <header class="page-head">
     <div>
         <h1>Customers &amp; trials</h1>
-        <p>Organizations on a free trial, and the customers using EMS today.</p>
+        <p>Organizations on a free trial, and the customers using EMS today. <b>Sign in as admin</b> opens a customer's panel in a new tab; you stay signed in here.</p>
     </div>
     <div class="page-actions">
+        @if (Model.Trials.Any(t => t.IsDemo))
+        {
+            <form method="post" asp-action="ResetDemo">
+                <button type="submit" class="btn btn-secondary" title="Discard visitors' changes and rebuild the demo now">Reset demo now</button>
+            </form>
+        }
         <a class="btn" asp-action="OfferTrial">Offer a free trial</a>
     </div>
 </header>
@@ -36,6 +43,7 @@
                         <th>Trial ends</th>
                         <th class="num">Employees</th>
                         <th>Onboarding</th>
+                        <th><span class="sr-only">Panel</span></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -43,18 +51,44 @@
                     {
                         var today = DateOnly.FromDateTime(DateTime.Today);
                         <tr>
-                            <td>@trial.Organization<small>@trial.Industry?.DisplayName()</small></td>
+                            <td>
+                                @trial.Organization
+                                @if (trial.IsDemo)
+                                {
+                                    <span class="badge badge-indigo">Demo</span>
+                                }
+                                <small>@trial.Industry?.DisplayName()</small>
+                            </td>
                             <td>@trial.OwnerEmail</td>
                             <td>@trial.OfferedAt.ToLocalTime().ToShortDate()</td>
-                            <td class="@(trial.TrialEndsOn < today ? "late" : null)">
-                                @trial.TrialEndsOn?.ToShortDate()
-                                @if (trial.TrialEndsOn is { } ends)
-                                {
-                                    <small>@(ends < today ? "Expired" : $"{ends.DayNumber - today.DayNumber} days left")</small>
-                                }
-                            </td>
+                            @if (trial.IsDemo)
+                            {
+                                <td>—<small>Resets every midnight</small></td>
+                            }
+                            else
+                            {
+                                <td class="@(trial.TrialEndsOn < today ? "late" : null)">
+                                    @trial.TrialEndsOn?.ToShortDate()
+                                    @if (trial.TrialEndsOn is { } ends)
+                                    {
+                                        <small>@(ends < today ? "Expired" : $"{ends.DayNumber - today.DayNumber} days left")</small>
+                                    }
+                                </td>
+                            }
                             <td class="num">@trial.Employees</td>
                             <td><partial name="_TrialStep" model="trial.Step" /></td>
+                            <td class="num">
+                                @if (trial.Step == OnboardingStep.Done)
+                                {
+                                    <form method="post" asp-action="SignInAs" asp-route-id="@trial.Id" target="_blank">
+                                        <button type="submit" class="btn btn-secondary btn-sm" title="Open @trial.Organization's admin panel in a new tab, signed in as @trial.OwnerEmail">Sign in as admin ↗</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <span class="muted" title="The owner has not finished setup yet">Not set up</span>
+                                }
+                            </td>
                         </tr>
                     }
                 </tbody>

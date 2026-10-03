@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authorization;
+using EMS.Models.Common;
 using EMS.Areas.Org.Models;
 using EMS.Data;
 using EMS.Services.Onboarding;
@@ -8,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 namespace EMS.Areas.Org.Controllers;
 
 /// <summary>Monthly salary sheet and printable salary slips, pro-rated from the attendance register.</summary>
+[Authorize(Roles = AppRoles.PayrollManagers)]
 public class PayrollController(OrganizationContext context, ApplicationDbContext db) : OrgController(context)
 {
     public async Task<IActionResult> Index(int? year, int? month, CancellationToken ct)

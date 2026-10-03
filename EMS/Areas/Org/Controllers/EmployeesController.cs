@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authorization;
+using EMS.Models.Common;
 using EMS.Areas.Org.Models;
 using EMS.Data;
 using EMS.Models;
@@ -8,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EMS.Areas.Org.Controllers;
 
+[Authorize(Roles = AppRoles.PeopleManagers)]
 public class EmployeesController(OrganizationContext context, ApplicationDbContext db, SetupService setup, ILogger<EmployeesController> logger)
     : OrgController(context)
 {

@@ -8,6 +8,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using EMS.Models.Common;
+using EMS.Services.Demo;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
@@ -24,12 +25,16 @@ namespace EMS.Areas.Identity.Pages.Account
         private readonly UserManager<IdentityUser> _userManager;
         private readonly ILogger<LoginModel> _logger;
 
-        public LoginModel(SignInManager<IdentityUser> signInManager, UserManager<IdentityUser> userManager, ILogger<LoginModel> logger)
+        public LoginModel(SignInManager<IdentityUser> signInManager, UserManager<IdentityUser> userManager, ILogger<LoginModel> logger, DemoSeeder demo)
         {
             _signInManager = signInManager;
             _userManager = userManager;
             _logger = logger;
+            Demo = demo;
         }
+
+        /// <summary>The public demo, whose logins are listed on the page.</summary>
+        public DemoSeeder Demo { get; }
 
         /// <summary>
         ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
@@ -120,13 +125,20 @@ namespace EMS.Areas.Identity.Pages.Account
                 {
                     _logger.LogInformation("User logged in.");
                     // Staff go to their console unless they were sent to sign in from a specific page:
-                    // super admins to the admin console, customer owners to onboarding (which forwards to their panel once set up).
+                    // super admins to the admin console, customer owners to onboarding (which forwards to their panel once set up),
+                    // the customer's staff to their organization panel.
                     if (defaultReturnUrl && await _userManager.FindByEmailAsync(Input.Email) is { } user)
                     {
                         if (await _userManager.IsInRoleAsync(user, AppRoles.SuperAdmin))
                             return RedirectToAction("Index", "Admin", new { area = "" });
                         if (await _userManager.IsInRoleAsync(user, AppRoles.OrgAdmin))
                             return RedirectToAction("Index", "Onboarding", new { area = "" });
+                        // HR and accounts land on the dashboard; employees are sent on to their own page.
+                        foreach (var role in new[] { AppRoles.OrgHR, AppRoles.OrgAccounts, AppRoles.Employee })
+                        {
+                            if (await _userManager.IsInRoleAsync(user, role))
+                                return RedirectToAction("Index", "Dashboard", new { area = "Org" });
+                        }
                     }
                     return LocalRedirect(returnUrl);
                 }

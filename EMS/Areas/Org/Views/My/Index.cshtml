@@ -1,0 +1,110 @@
+@model MyMonth
+@using EMS.Services.Timekeeping
+@{
+    ViewData["Title"] = "My attendance";
+    var records = Model.Days.Where(d => d.Record is not null).Select(d => d.Record!).ToList();
+    int Count(params AttendanceStatus[] statuses) => records.Count(r => statuses.Contains(r.Status));
+    string Badge(AttendanceStatus status) => status switch
+    {
+        AttendanceStatus.Present => "badge-green",
+        AttendanceStatus.HalfDay => "badge-blue",
+        AttendanceStatus.Absent => "badge-orange",
+        AttendanceStatus.OnLeave => "badge-indigo",
+        _ => "",
+    };
+}
+
+<header class="page-head">
+    <div>
+        <h1>My attendance</h1>
+        <p>@(Model.Employee is { } me ? $"{me.FullName} · {me.EmpCode} · {me.Designation}" : "Your days, punch times and salary slip.")</p>
+    </div>
+    <div class="page-actions">
+        @if (Model.Pay is not null)
+        {
+            <a class="btn btn-secondary btn-sm" asp-action="Slip" asp-route-year="@Model.Year" asp-route-month="@Model.Month">Salary slip</a>
+        }
+        <partial name="_MonthNav" model="Model.First" />
+    </div>
+</header>
+
+@if (Model.Employee is null)
+{
+    <section class="card">
+        <div class="empty">
+            <p>Your login is not linked to an employee record yet. Ask your HR or admin to link it.</p>
+        </div>
+    </section>
+}
+else if (Model.Days.Count == 0)
+{
+    <section class="card">
+        <div class="empty">
+            <p>You were not on the rolls in @Model.First.ToString("MMMM yyyy").</p>
+        </div>
+    </section>
+}
+else
+{
+    var unmarked = Model.Days.Count(d => d.Record is null); // days up to today only
+    List<EMS.Models.Admin.StatTile> stats =
+    [
+        new("Present", Count(AttendanceStatus.Present, AttendanceStatus.HalfDay).ToString(), $"{Count(AttendanceStatus.HalfDay)} half day"),
+        new("Late", records.Count(r => r.IsLate).ToString(), "After the shift's grace time"),
+        new("Absent", Count(AttendanceStatus.Absent).ToString(), $"{Count(AttendanceStatus.OnLeave)} on leave"),
+        new("Paid days", Model.Pay!.PaidDays.ToString("0.#"), unmarked > 0 ? $"{unmarked} day{(unmarked == 1 ? "" : "s")} not marked yet" : $"of {Model.Pay.EmployedDays}"),
+    ];
+    <partial name="_Stats" model="stats" />
+
+    <section class="card">
+        <div class="card-head">
+            <h2>@Model.First.ToString("MMMM yyyy")</h2>
+            <span>@Model.Employee.Shift?.Name shift@(Model.Employee.Shift is { } shift ? $" · {PunchRules.Clock(shift.StartTime)}–{PunchRules.Clock(shift.EndTime)}" : "")</span>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>In</th>
+                        <th>Out</th>
+                        <th class="num">Worked</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var day in Model.Days.OrderByDescending(d => d.Date))
+                    {
+                        var record = day.Record;
+                        <tr>
+                            <td>@day.Date.ToString("ddd dd MMM")</td>
+                            <td>
+                                @if (record is null)
+                                {
+                                    <span class="muted">Not marked</span>
+                                }
+                                else
+                                {
+                                    <span class="badge @Badge(record.Status)">@AttendanceCodes.All.First(c => c.Status == record.Status).Name</span>
+                                    @if (record.Remarks is not null)
+                                    {
+                                        <small>@record.Remarks</small>
+                                    }
+                                }
+                            </td>
+                            <td class="@(record?.IsLate == true ? "late" : null)">
+                                @(record?.LoginAt is { } login ? PunchRules.Clock(login) : "—")
+                                @if (record?.IsLate == true)
+                                {
+                                    <small>Late</small>
+                                }
+                            </td>
+                            <td>@(record?.LogoffAt is { } logoff ? PunchRules.Clock(logoff) : "—")</td>
+                            <td class="num">@(record?.WorkedMinutes is { } worked ? PunchRules.Duration(worked) : "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+}
