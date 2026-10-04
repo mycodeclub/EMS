@@ -93,7 +93,7 @@ jobs:
           curl -sS "${ssl[@]}" --user "$FTP_USERNAME:$FTP_PASSWORD" "ftp://$FTP_SERVER/" -Q "DELE ${FTP_REMOTE_DIR#/}index.html" -o /dev/null || true
           sleep 5
 
-      # lftp mirrors the build over FTPS, uploading only new or changed files. (SamKirkland/FTP-Deploy-Action's FTP library
+      # lftp mirrors the build over FTPS, uploading only new or changed files (no chmod: the Windows host refuses it). (SamKirkland/FTP-Deploy-Action's FTP library
       # loses its data connection with this host, so it is not used.) App_Data on the server holds uploaded photos and
       # documents and the sign-in keys: it is never touched.
       - name: Upload
@@ -111,7 +111,7 @@ jobs:
           lftp -u "$FTP_USERNAME,$FTP_PASSWORD" "$FTP_SERVER" -e "
             $ssl
             set net:max-retries 5; set net:reconnect-interval-base 5; set net:timeout 60;
-            mirror --reverse --only-newer --parallel=4 --verbose=1 --exclude-glob App_Data/ --exclude-glob logs/ ./publish/ $remote;
+            mirror --reverse --only-newer --no-perms --no-umask --parallel=4 --verbose=1 --exclude-glob App_Data/ --exclude-glob logs/ ./publish/ $remote;
             bye"
 
       - name: Bring the site back online
