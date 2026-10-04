@@ -169,5 +169,9 @@ Settings are in GitHub → **Settings → Environments → production**:
 | Variable | `FTP_REMOTE_DIR`               | `ems/`                                                                   |
 | Variable | `FTP_PROTOCOL`                 | `ftps`                                                                   |
 | Variable | `SUPERADMIN_EMAIL`             | Super admin sign-in email (default `superadmin@ems.local`)               |
+| Variable | `EMAIL_SMTP_HOST` | Outgoing mail server. Leave unset to save mail to `App_Data/mail` instead of sending |
+| Variable | `EMAIL_SMTP_PORT`, `EMAIL_ENABLE_SSL` | `587` with STARTTLS or `465` with SSL; `true` (default) |
+| Variable | `EMAIL_USERNAME`, `EMAIL_FROM_ADDRESS`, `EMAIL_FROM_NAME` | Mailbox login (e.g. `ems@bitprosofttech.com`), sender address and name |
+| Secret | `EMAIL_PASSWORD` | Mailbox password |
 
 On first start the app creates the roles, the super admin and the public demo organization, and rebuilds the demo every midnight (India time). Dates such as "today" follow `App:TimeZone` (default `Asia/Kolkata`), not the server's clock. Never put a production connection string or password in the repository.
