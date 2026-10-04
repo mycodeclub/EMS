@@ -43,9 +43,11 @@ trap 'rm -f "$EMS_SSL_NETRC"' EXIT
 printf 'machine %s login %s password %s\n' "$FTP_SERVER" "$ftp_user" "$ftp_password" > "$EMS_SSL_NETRC"
 ftp "ftp://$FTP_SERVER/" -o /dev/null || { echo "FTP login failed." >&2; exit 1; }
 
-self="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+# certbot splits hook commands on spaces even when quoted ("My Business"), so it calls the script through a link.
+hook="$STATE_DIR/ssl-certificate-hook"
+ln -sf "$(cd "$(dirname "$0")" && pwd)/$(basename "$0")" "$hook"
 certbot certonly --manual --preferred-challenges http -d "$DOMAIN" \
-  --manual-auth-hook "'$self' auth" --manual-cleanup-hook "'$self' cleanup" \
+  --manual-auth-hook "$hook auth" --manual-cleanup-hook "$hook cleanup" \
   --non-interactive --agree-tos --register-unsafely-without-email --keep-until-expiring \
   --config-dir "$STATE_DIR/config" --work-dir "$STATE_DIR/work" --logs-dir "$STATE_DIR/logs" ${@+"$@"}
 
