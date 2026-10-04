@@ -45,7 +45,7 @@ public static class Impersonation
                 options.Cookie.Path = PathPrefix;
                 options.Cookie.HttpOnly = true;
                 options.Cookie.SameSite = SameSiteMode.Lax;
-                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
                 options.ExpireTimeSpan = Lifetime;
                 options.SlidingExpiration = false;
                 options.LoginPath = "/Identity/Account/Login";

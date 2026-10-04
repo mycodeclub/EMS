@@ -21,7 +21,7 @@ public class ResignationService(ApplicationDbContext db)
 
     public async Task<string?> SubmitAsync(Employee employee, string reason, DateOnly requestedLastDay, CancellationToken ct = default)
     {
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = DateOnly.FromDateTime(AppClock.Today);
         if (await CurrentAsync(employee.UniqueId, ct) is not null) return "You already have a resignation in progress.";
         if (employee.DateOfLeaving is { } left && left < today) return "You have already left the organization.";
         if (requestedLastDay < today) return "The last working day cannot be in the past.";

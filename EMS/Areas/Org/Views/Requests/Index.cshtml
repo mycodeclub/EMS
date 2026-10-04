@@ -2,7 +2,7 @@
 @{
     ViewData["Title"] = "Leave & resignations";
     var pendingResignations = Model.Resignations.Count(r => r.Status == ResignationStatus.Pending);
-    var onNotice = Model.Resignations.Where(r => r.Status == ResignationStatus.Accepted && r.LastWorkingDay >= DateOnly.FromDateTime(DateTime.Today)).ToList();
+    var onNotice = Model.Resignations.Where(r => r.Status == ResignationStatus.Accepted && r.LastWorkingDay >= DateOnly.FromDateTime(AppClock.Today)).ToList();
     List<EMS.Models.Admin.StatTile> stats =
     [
         new("Leave to approve", Model.PendingLeave.Count.ToString(), $"{Model.PendingLeave.Sum(a => a.TotalDays):0.#} days in total"),
@@ -34,7 +34,7 @@
                         <tr>
                             <td>@d.Employee.FullName<small>@d.Employee.EmpCode</small></td>
                             <td>@d.Type.DisplayName()<small><a asp-controller="Employees" asp-action="Document" asp-route-id="@d.EmployeeId" asp-route-documentId="@d.UniqueId" target="_blank">@d.OriginalName</a></small></td>
-                            <td>@d.CreatedAt.ToLocalTime().ToShortDate()</td>
+                            <td>@d.CreatedAt.ToAppTime().ToShortDate()</td>
                             <td>
                                 <form method="post" asp-controller="Employees" asp-action="ReviewDocument" asp-route-id="@d.EmployeeId" asp-route-documentId="@d.UniqueId" asp-route-returnTo="requests" class="decide">
                                     <input name="note" maxlength="500" placeholder="Note (needed to reject)" aria-label="Note" />
@@ -65,7 +65,7 @@
                     @foreach (var a in Model.PendingLeave)
                     {
                         <tr>
-                            <td>@a.Employee.FullName<small>@a.Employee.EmpCode · applied @a.AppliedOn.ToLocalTime().ToShortDate()</small></td>
+                            <td>@a.Employee.FullName<small>@a.Employee.EmpCode · applied @a.AppliedOn.ToAppTime().ToShortDate()</small></td>
                             <td>@a.FromDate.ToString("dd MMM")@(a.ToDate != a.FromDate ? $" – {a.ToDate:dd MMM}" : "") @a.ToDate.Year<small>@a.Reason</small></td>
                             <td>@a.LeaveType.Name@(a.IsHalfDay ? " (half day)" : "")</td>
                             <td class="num">@a.TotalDays.ToString("0.#")</td>
@@ -100,7 +100,7 @@
                     {
                         <tr>
                             <td>@r.Employee.FullName<small>@r.Employee.EmpCode · @r.Employee.NoticePeriodDays-day notice</small></td>
-                            <td>@r.SubmittedAt.ToLocalTime().ToShortDate()<small>@r.Reason</small></td>
+                            <td>@r.SubmittedAt.ToAppTime().ToShortDate()<small>@r.Reason</small></td>
                             <td>@((r.LastWorkingDay ?? r.RequestedLastDay).ToShortDate())<small>@(r.LastWorkingDay is null ? "Asked for" : "Confirmed")</small></td>
                             <td><span class="badge @(r.Status == ResignationStatus.Pending ? "badge-blue" : "badge-orange")">@(r.Status == ResignationStatus.Pending ? "Waiting" : "On notice")</span></td>
                             <td>

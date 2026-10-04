@@ -20,7 +20,7 @@
 <main id="main" class="section">
     <article class="container container-narrow legal">
         <h1>Privacy policy</h1>
-        <p class="legal-updated">Last updated: @DateTime.Now.ToString("MMMM yyyy")</p>
+        <p class="legal-updated">Last updated: @AppClock.Now.ToString("MMMM yyyy")</p>
 
         <h2>Who we are</h2>
         <p>@company.ProductName is an employee management system provided by @company.Name ("we", "us").</p>
@@ -53,6 +53,6 @@
 </main>
 <footer class="footer">
     <div class="container footer-inner">
-        <p class="footer-copy" style="border:0;padding:0">© @DateTime.Now.Year @company.Name. All rights reserved.</p>
+        <p class="footer-copy" style="border:0;padding:0">© @AppClock.Now.Year @company.Name. All rights reserved.</p>
     </div>
 </footer>

@@ -1,7 +1,7 @@
 @model OfferableList<LeadRow>
 @{
     ViewData["Title"] = "Leads";
-    var today = DateOnly.FromDateTime(DateTime.Today);
+    var today = DateOnly.FromDateTime(AppClock.Today);
 }
 
 <header class="page-head">

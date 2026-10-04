@@ -4,7 +4,7 @@
     ViewData["Title"] = $"In / out {Model.Date:dd MMM yyyy}";
     var previous = Model.Date.AddDays(-1);
     var next = Model.Date.AddDays(1);
-    var hasNext = next <= DateOnly.FromDateTime(DateTime.Today);
+    var hasNext = next <= DateOnly.FromDateTime(AppClock.Today);
     var entries = Model.Entries;
     int Count(params AttendanceStatus[] statuses) => entries.Count(e => e.Status is { } s && statuses.Contains(s));
     List<EMS.Models.Admin.StatTile> stats =

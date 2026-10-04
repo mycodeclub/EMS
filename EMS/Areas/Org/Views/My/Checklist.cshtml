@@ -96,7 +96,7 @@
                     {
                         <tr>
                             <td>@d.Type.DisplayName()<small><a asp-action="Document" asp-route-id="@d.UniqueId" target="_blank">@d.OriginalName</a></small></td>
-                            <td>@d.CreatedAt.ToLocalTime().ToShortDate()</td>
+                            <td>@d.CreatedAt.ToAppTime().ToShortDate()</td>
                             <td>
                                 <span class="badge @(d.Status switch { DocumentStatus.Verified => "badge-green", DocumentStatus.Rejected => "badge-orange", _ => "badge-blue" })">@d.Status.DisplayName()</span>
                                 @if (d.ReviewNote is not null)

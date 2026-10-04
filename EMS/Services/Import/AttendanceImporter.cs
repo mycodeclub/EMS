@@ -40,7 +40,7 @@ public class AttendanceImporter(ApplicationDbContext db)
         var assignments = map.Has("biometric")
             ? await db.BiometricIdAssignments.Where(a => a.OrganizationId == organization.UniqueId).ToListAsync(ct)
             : [];
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = DateOnly.FromDateTime(AppClock.Today);
 
         var errors = new List<ImportError>();
         var seen = new HashSet<(int, DateOnly)>();

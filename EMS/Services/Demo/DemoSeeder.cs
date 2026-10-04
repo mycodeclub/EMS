@@ -139,7 +139,7 @@ public class DemoSeeder(
 
     private async Task CreateAsync(CancellationToken ct)
     {
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = DateOnly.FromDateTime(AppClock.Today);
         var firstDay = new DateOnly(today.Year, today.Month, 1).AddMonths(-3);
 
         var accounts = new Dictionary<string, IdentityUser>();
@@ -329,8 +329,8 @@ public class DemoSeeder(
             db.LeaveApplications.Add(new LeaveApplication
             {
                 EmployeeId = day.EmployeeId, LeaveTypeId = casual.UniqueId, FromDate = day.AttendanceDate, ToDate = day.AttendanceDate,
-                TotalDays = 1, Reason = "Personal work", AppliedOn = day.AttendanceDate.AddDays(-3).ToDateTime(new TimeOnly(10, 0)).ToUniversalTime(),
-                Status = LeaveStatus.Approved, ActionedOn = day.AttendanceDate.AddDays(-2).ToDateTime(new TimeOnly(11, 0)).ToUniversalTime(),
+                TotalDays = 1, Reason = "Personal work", AppliedOn = day.AttendanceDate.AddDays(-3).ToDateTime(new TimeOnly(10, 0)).AppTimeToUtc(),
+                Status = LeaveStatus.Approved, ActionedOn = day.AttendanceDate.AddDays(-2).ToDateTime(new TimeOnly(11, 0)).AppTimeToUtc(),
             });
             day.Remarks = "Casual leave (approved)";
             var balance = balances.First(b => b.EmployeeId == day.EmployeeId && b.LeaveTypeId == casual.UniqueId && b.Year == day.AttendanceDate.Year);
@@ -386,9 +386,9 @@ public class DemoSeeder(
         var lastDay = submitted.AddDays(arjun.NoticePeriodDays);
         db.Resignations.Add(new Resignation
         {
-            EmployeeId = arjun.UniqueId, SubmittedAt = submitted.ToDateTime(new TimeOnly(10, 30)).ToUniversalTime(),
+            EmployeeId = arjun.UniqueId, SubmittedAt = submitted.ToDateTime(new TimeOnly(10, 30)).AppTimeToUtc(),
             Reason = "Pursuing a PhD at IISER Pune.", RequestedLastDay = lastDay, LastWorkingDay = lastDay,
-            Status = ResignationStatus.Accepted, ActionedAt = submitted.AddDays(1).ToDateTime(new TimeOnly(12, 0)).ToUniversalTime(),
+            Status = ResignationStatus.Accepted, ActionedAt = submitted.AddDays(1).ToDateTime(new TimeOnly(12, 0)).AppTimeToUtc(),
             Remarks = "Accepted. Please complete the hand-over of lab records.",
         });
         arjun.DateOfLeaving = lastDay;

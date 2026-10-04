@@ -54,15 +54,15 @@ public class DemoResetService(IServiceScopeFactory scopes, IOptions<DemoOptions>
 
     private TimeZoneInfo TimeZone()
     {
-        if (string.IsNullOrWhiteSpace(options.Value.TimeZone)) return TimeZoneInfo.Local;
+        if (string.IsNullOrWhiteSpace(options.Value.TimeZone)) return AppClock.Zone;
         try
         {
             return TimeZoneInfo.FindSystemTimeZoneById(options.Value.TimeZone);
         }
         catch (TimeZoneNotFoundException)
         {
-            logger.LogWarning("Unknown Demo:TimeZone {Zone}; using the server's time zone.", options.Value.TimeZone);
-            return TimeZoneInfo.Local;
+            logger.LogWarning("Unknown Demo:TimeZone {Zone}; using the app's time zone.", options.Value.TimeZone);
+            return AppClock.Zone;
         }
     }
 }

@@ -1,0 +1,121 @@
+name: Deploy to production
+
+# Every merge into `release` (the branch only accepts pull requests) builds and publishes EMS, applies database
+# migrations to the live database, then uploads the site to the site4now (SmarterASP) IIS site over FTPS.
+# Settings live in the `production` environment on GitHub:
+#   secrets:   CONNECTION_STRING, FTP_USERNAME, FTP_PASSWORD, SUPERADMIN_PASSWORD
+#   variables: FTP_SERVER, FTP_REMOTE_DIR (site folder, ending in /), FTP_PROTOCOL (ftps or ftp; default ftps),
+#              SUPERADMIN_EMAIL (default superadmin@ems.local)
+on:
+  push:
+    branches: [release]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Check settings
+        env:
+          CONNECTION_STRING: ${{ secrets.CONNECTION_STRING }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          SUPERADMIN_PASSWORD: ${{ secrets.SUPERADMIN_PASSWORD }}
+          FTP_SERVER: ${{ vars.FTP_SERVER }}
+          FTP_REMOTE_DIR: ${{ vars.FTP_REMOTE_DIR }}
+        run: |
+          missing=""
+          for name in CONNECTION_STRING FTP_USERNAME FTP_PASSWORD SUPERADMIN_PASSWORD FTP_SERVER FTP_REMOTE_DIR; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Set these in Settings > Environments > production:$missing"
+            exit 1
+          fi
+
+      - name: Restore
+        run: dotnet restore EMS.slnx
+      - name: Build
+        run: dotnet build EMS.slnx --no-restore -c Release
+
+      # Every model change must come with a migration, or the live schema would drift from the code.
+      - name: Check migrations match the model
+        run: |
+          dotnet tool install --global dotnet-ef --version 10.0.*
+          dotnet ef migrations has-pending-model-changes --project EMS/EMS.csproj --no-build --configuration Release
+
+      # Self-contained, so the server needs no .NET 10 install; web.config runs it out-of-process under IIS.
+      - name: Publish
+        run: dotnet publish EMS/EMS.csproj -c Release -r win-x64 --self-contained -o publish
+
+      # The connection string and super admin password exist only in GitHub secrets and on the server; never in the repo.
+      - name: Write appsettings.Production.json
+        env:
+          CONNECTION_STRING: ${{ secrets.CONNECTION_STRING }}
+          SUPERADMIN_PASSWORD: ${{ secrets.SUPERADMIN_PASSWORD }}
+          SUPERADMIN_EMAIL: ${{ vars.SUPERADMIN_EMAIL || 'superadmin@ems.local' }}
+        run: |
+          jq -n --arg cs "$CONNECTION_STRING" --arg email "$SUPERADMIN_EMAIL" --arg pw "$SUPERADMIN_PASSWORD" \
+            '{ConnectionStrings: {DefaultConnection: $cs}, SuperAdmin: {Email: $email, Password: $pw}}' > publish/appsettings.Production.json
+
+      # Schema first, while the old site keeps running: migrations only add, so the old code is unaffected.
+      # If a migration fails, the job stops here and the live site is not touched.
+      - name: Apply database migrations
+        env:
+          CONNECTION_STRING: ${{ secrets.CONNECTION_STRING }}
+        run: |
+          dotnet ef migrations list --project EMS/EMS.csproj --no-build --configuration Release --connection "$CONNECTION_STRING"
+          dotnet ef database update --project EMS/EMS.csproj --no-build --configuration Release --connection "$CONNECTION_STRING"
+
+      # IIS locks the running app's files; app_offline.htm makes it stop the app while files are replaced.
+      - name: Take the site offline
+        env:
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_SERVER: ${{ vars.FTP_SERVER }}
+          FTP_REMOTE_DIR: ${{ vars.FTP_REMOTE_DIR }}
+          FTP_PROTOCOL: ${{ vars.FTP_PROTOCOL || 'ftps' }}
+        run: |
+          echo '<!doctype html><title>Updating</title><p>EMS is being updated. Please try again in a minute.</p>' > app_offline.htm
+          ssl=(); [ "$FTP_PROTOCOL" = "ftps" ] && ssl=(--ssl-reqd)
+          curl -sS "${ssl[@]}" --user "$FTP_USERNAME:$FTP_PASSWORD" -T app_offline.htm "ftp://$FTP_SERVER/${FTP_REMOTE_DIR#/}app_offline.htm"
+          # The host's placeholder page would shadow the app's home page.
+          curl -sS "${ssl[@]}" --user "$FTP_USERNAME:$FTP_PASSWORD" "ftp://$FTP_SERVER/" -Q "DELE ${FTP_REMOTE_DIR#/}index.html" -o /dev/null || true
+          sleep 5
+
+      # App_Data on the server holds uploaded photos and documents and the sign-in keys: never overwrite it.
+      - name: Upload
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ vars.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ${{ vars.FTP_PROTOCOL || 'ftps' }}
+          local-dir: ./publish/
+          server-dir: ${{ vars.FTP_REMOTE_DIR }}
+          exclude: |
+            logs/**
+            App_Data/**
+
+      - name: Bring the site back online
+        if: always()
+        env:
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_SERVER: ${{ vars.FTP_SERVER }}
+          FTP_REMOTE_DIR: ${{ vars.FTP_REMOTE_DIR }}
+          FTP_PROTOCOL: ${{ vars.FTP_PROTOCOL || 'ftps' }}
+        run: |
+          [ -n "$FTP_SERVER" ] || exit 0
+          ssl=(); [ "$FTP_PROTOCOL" = "ftps" ] && ssl=(--ssl-reqd)
+          curl -sS "${ssl[@]}" --user "$FTP_USERNAME:$FTP_PASSWORD" "ftp://$FTP_SERVER/" -Q "DELE ${FTP_REMOTE_DIR#/}app_offline.htm" -o /dev/null || true

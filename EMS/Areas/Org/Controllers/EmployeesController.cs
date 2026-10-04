@@ -59,8 +59,8 @@ public class EmployeesController(
     public async Task<IActionResult> Create(CancellationToken ct)
     {
         await LoadEditAsync(null, ct);
-        return View("Edit", new EmployeeInput { DateOfJoining = DateOnly.FromDateTime(DateTime.Today), Status = EmployeeStatus.OnProbation,
-            ProbationEndsOn = DateOnly.FromDateTime(DateTime.Today).AddMonths(6).AddDays(-1) });
+        return View("Edit", new EmployeeInput { DateOfJoining = DateOnly.FromDateTime(AppClock.Today), Status = EmployeeStatus.OnProbation,
+            ProbationEndsOn = DateOnly.FromDateTime(AppClock.Today).AddMonths(6).AddDays(-1) });
     }
 
     public async Task<IActionResult> Edit(int id, CancellationToken ct)
@@ -157,7 +157,7 @@ public class EmployeesController(
         if (await FindAsync(id, ct) is not { } employee) return NotFound();
         if (employee.Status != EmployeeStatus.OnProbation) return Back(id, $"{employee.FullName} is not on probation.");
         employee.Status = EmployeeStatus.Active;
-        employee.ConfirmedOn = DateOnly.FromDateTime(DateTime.Today);
+        employee.ConfirmedOn = DateOnly.FromDateTime(AppClock.Today);
         await db.SaveChangesAsync(ct);
         TempData["Message"] = $"{employee.FullName} is confirmed. The confirmation letter is under Letters.";
         return RedirectToAction(nameof(Edit), new { id });
@@ -298,7 +298,7 @@ public class EmployeesController(
     /// <summary>Dates that make sense, a manager from this organization, and no other employee with the same contact or IDs.</summary>
     private async Task ValidateAsync(EmployeeInput input, Employee? employee, CancellationToken ct)
     {
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = DateOnly.FromDateTime(AppClock.Today);
         if (input.DateOfLeaving is { } left && input.DateOfJoining is { } joined && left < joined)
             ModelState.AddModelError(nameof(input.DateOfLeaving), "The leaving date cannot be before the joining date.");
         if (input.ProbationEndsOn is { } probation && input.DateOfJoining is { } start && probation < start)

@@ -1,7 +1,7 @@
 @model AttendanceSheet
 @{
     ViewData["Title"] = "Attendance";
-    var today = DateOnly.FromDateTime(DateTime.Today);
+    var today = DateOnly.FromDateTime(AppClock.Today);
     var days = Enumerable.Range(1, Model.DaysInMonth).Select(d => new DateOnly(Model.Year, Model.Month, d)).ToList();
     // Weekly off for "fill": Sundays for day-shift businesses; 24x7 businesses fill every day as present.
     var weekendFill = Model.RoundTheClock ? (int)AttendanceStatus.Present : (int)AttendanceStatus.WeeklyOff;

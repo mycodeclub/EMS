@@ -58,7 +58,7 @@ public static class ImportTemplates
     private static List<Cell[]> AttendanceSamples(IReadOnlyList<string> employeeCodes)
     {
         string Code(int i) => employeeCodes.Count > i ? employeeCodes[i] : $"E{i + 1:000}";
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = DateOnly.FromDateTime(AppClock.Today);
         var day1 = today.AddDays(-2);
         var day2 = today.AddDays(-1);
         // Columns: code, date, in, out, status, remarks

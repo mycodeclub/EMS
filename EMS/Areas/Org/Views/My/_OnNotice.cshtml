@@ -1,7 +1,7 @@
 @model Resignation?
 @if (Model is { Status: ResignationStatus.Accepted, LastWorkingDay: { } last })
 {
-    var left = last.DayNumber - DateOnly.FromDateTime(DateTime.Today).DayNumber;
+    var left = last.DayNumber - DateOnly.FromDateTime(AppClock.Today).DayNumber;
     <p class="notice notice-warn" role="note">
         <b>On notice.</b> Your last working day is @last.ToString("dddd, dd MMMM yyyy")
         (@(left > 0 ? $"{left} day{(left == 1 ? "" : "s")} to go" : left == 0 ? "today" : "passed")).

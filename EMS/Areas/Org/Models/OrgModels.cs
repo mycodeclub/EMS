@@ -39,7 +39,7 @@ public record DayMark(AttendanceStatus Status, DateTime? LoginAt, DateTime? Logo
 /// <summary>Day view: punch in / out and status for every employee on the rolls that day.</summary>
 public record AttendanceDay(DateOnly Date, IReadOnlyList<PunchEntry> Entries, bool RoundTheClock)
 {
-    public bool IsToday => Date == DateOnly.FromDateTime(DateTime.Today);
+    public bool IsToday => Date == DateOnly.FromDateTime(AppClock.Today);
 }
 
 /// <summary>One employee's row in the day view: the saved record, or what was just posted when it had a problem.</summary>

@@ -36,7 +36,7 @@ public class AttendanceController(OrganizationContext context, ApplicationDbCont
     public async Task<IActionResult> Index(int year, int month, CancellationToken ct)
     {
         var (y, m) = ResolveMonth(year, month);
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = DateOnly.FromDateTime(AppClock.Today);
         var employees = await EmployeesOnRollsAsync(y, m, ct);
         var existing = (await RecordsAsync(employees, y, m, ct))
             .GroupBy(a => (a.EmployeeId, a.AttendanceDate))
@@ -83,7 +83,7 @@ public class AttendanceController(OrganizationContext context, ApplicationDbCont
     /// <summary>Punch in / out for every employee on one day. Defaults to today.</summary>
     public async Task<IActionResult> Day(DateOnly? date, CancellationToken ct)
     {
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = DateOnly.FromDateTime(AppClock.Today);
         var day = date is { } d && d <= today ? d : today;
         var employees = await EmployeesOnRollsAsync(day, day, ct);
         var records = await FirstRecordsAsync(employees, day, ct);
@@ -112,7 +112,7 @@ public class AttendanceController(OrganizationContext context, ApplicationDbCont
     [HttpPost, ValidateAntiForgeryToken, ActionName("Day"), RequestFormLimits(ValueCountLimit = 20_000)]
     public async Task<IActionResult> SaveDay(DateOnly date, CancellationToken ct)
     {
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = DateOnly.FromDateTime(AppClock.Today);
         if (date > today) return RedirectToAction(nameof(Day));
 
         var employees = await EmployeesOnRollsAsync(date, date, ct);

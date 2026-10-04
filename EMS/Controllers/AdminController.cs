@@ -69,7 +69,7 @@ public class AdminController(
             new("New", rows.Count(r => r.Status == EnquiryStatus.New).ToString(), "Awaiting first call"),
             new("Contacted", rows.Count(r => r.Status == EnquiryStatus.Contacted).ToString()),
             new("Converted", rows.Count(r => r.Status == EnquiryStatus.Converted).ToString(), "Became a lead or customer"),
-            new("Last 7 days", rows.Count(r => r.ReceivedAt >= DateTime.Now.AddDays(-7)).ToString(), $"{rows.Count} in total"),
+            new("Last 7 days", rows.Count(r => r.ReceivedAt >= AppClock.Now.AddDays(-7)).ToString(), $"{rows.Count} in total"),
         ], rows, await OfferedAsync(ct)));
     }
 
@@ -77,7 +77,7 @@ public class AdminController(
     {
         // Leads are not stored yet.
         IReadOnlyList<LeadRow> rows = [];
-        var weekEnd = DateOnly.FromDateTime(DateTime.Today.AddDays(7));
+        var weekEnd = DateOnly.FromDateTime(AppClock.Today.AddDays(7));
         return View(new OfferableList<LeadRow>(
         [
             new("Open leads", rows.Count.ToString()),
@@ -180,12 +180,12 @@ public class AdminController(
     /// <summary>Enquiries received in each of the last <paramref name="weeks"/> weeks (Monday to Sunday), ending with this week.</summary>
     private async Task<IReadOnlyList<(DateOnly WeekStart, int Count)>> EnquiriesByWeekAsync(int weeks, CancellationToken ct)
     {
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = DateOnly.FromDateTime(AppClock.Today);
         var monday = today.AddDays(-(((int)today.DayOfWeek + 6) % 7));
         var first = monday.AddDays(-7 * (weeks - 1));
-        var since = first.ToDateTime(TimeOnly.MinValue).ToUniversalTime();
+        var since = first.ToDateTime(TimeOnly.MinValue).AppTimeToUtc();
         var received = (await enquiries.Query().Where(e => e.CreatedAt >= since).Select(e => e.CreatedAt).ToListAsync(ct))
-            .Select(at => DateOnly.FromDateTime(at.ToLocalTime())).ToList();
+            .Select(at => DateOnly.FromDateTime(at.ToAppTime())).ToList();
         return Enumerable.Range(0, weeks)
             .Select(i => first.AddDays(7 * i))
             .Select(start => (start, received.Count(d => d >= start && d < start.AddDays(7))))
@@ -193,7 +193,7 @@ public class AdminController(
     }
 
     private static EnquiryRow ToRow(Enquiry e) => new(
-        e.CreatedAt.ToLocalTime(), e.Name, e.OrganizationName, e.Email, e.Phone, e.Industry, e.TeamSize, e.Interest, e.Status);
+        e.CreatedAt.ToAppTime(), e.Name, e.OrganizationName, e.Email, e.Phone, e.Industry, e.TeamSize, e.Interest, e.Status);
 
     private async Task<IReadOnlySet<string>> OfferedAsync(CancellationToken ct) =>
         (await trials.OwnerEmailsAsync(ct)).ToHashSet(StringComparer.OrdinalIgnoreCase);

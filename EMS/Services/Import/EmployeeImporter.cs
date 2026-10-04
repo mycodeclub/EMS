@@ -42,7 +42,7 @@ public class EmployeeImporter(ApplicationDbContext db, SetupService setup)
         var everyCode = await setup.EmployeeCodesAsync(organization.UniqueId, ct); // includes removed employees
         var current = await db.Employees.Where(e => e.OrganizationId == organization.UniqueId).ToDictionaryAsync(e => e.EmpCode, StringComparer.OrdinalIgnoreCase, ct);
         var branch = OrganizationContext.DefaultBranch(organization);
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = DateOnly.FromDateTime(AppClock.Today);
 
         var errors = new List<ImportError>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);

@@ -4,8 +4,17 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Shared IIS hosting (site4now): self-contained win-x64 publish, run out of process like BpstAcademy. -->
+    <AspNetCoreHostingModel>OutOfProcess</AspNetCoreHostingModel>
     <UserSecretsId>aspnet-EMS-bf46babe-56fa-466e-922e-71eca7dd5ed4</UserSecretsId>
   </PropertyGroup>
+
+  <!-- Local-only files: never shipped to the server. -->
+  <ItemGroup>
+    <Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" />
+    <None Remove="app.db*" />
+    <Content Remove="App_Data/**" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="ClosedXML" Version="0.105.1" />

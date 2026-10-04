@@ -88,7 +88,7 @@ public class LeaveService(ApplicationDbContext db)
     {
         var from = input.FromDate!.Value;
         var to = input.ToDate!.Value;
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = DateOnly.FromDateTime(AppClock.Today);
         if (to < from) return "The leave cannot end before it starts.";
         if (from < today.AddDays(-BackdateDays)) return $"Leave can be applied at most {BackdateDays} days back.";
         if (from.Year != to.Year) return "Apply separately for the days in each year.";

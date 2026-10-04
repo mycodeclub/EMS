@@ -2,7 +2,7 @@
 @{
     ViewData["Title"] = "My profile";
     var e = Model.Employee;
-    var today = DateOnly.FromDateTime(DateTime.Today);
+    var today = DateOnly.FromDateTime(AppClock.Today);
     var total = e.TotalExperienceMonths(today);
     static string Years(int months) => months < 12 ? $"{months} mo" : $"{months / 12} yr{(months / 12 == 1 ? "" : "s")}{(months % 12 > 0 ? $" {months % 12} mo" : "")}";
     var initials = string.Concat(new[] { e.FirstName, e.LastName }.Where(n => !string.IsNullOrEmpty(n)).Select(n => n![0]));

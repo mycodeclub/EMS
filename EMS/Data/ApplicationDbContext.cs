@@ -172,7 +172,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     /// <summary>Keeps BiometricIdAssignment (ID -> employee tenure history) in step with employee changes.</summary>
     private async Task TrackBiometricIdsAsync(bool async, CancellationToken ct)
     {
-        var today = DateOnly.FromDateTime(DateTime.Now);
+        var today = DateOnly.FromDateTime(AppClock.Now);
 
         foreach (var entry in ChangeTracker.Entries<Employee>().ToList())
         {

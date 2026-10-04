@@ -56,7 +56,7 @@
 @if (employee is { Status: EmployeeStatus.OnProbation })
 {
     var due = employee.ProbationEndsOn;
-    var overdue = due is { } d && d < DateOnly.FromDateTime(DateTime.Today);
+    var overdue = due is { } d && d < DateOnly.FromDateTime(AppClock.Today);
     <form method="post" asp-action="Confirm" asp-route-id="@Model.Id" class="notice @(overdue ? "notice-warn" : null) impersonating" style="max-width:860px">
         <span>
             <b>On probation</b>@(due is { } end ? $" until {end.ToShortDate()}" : "")@(overdue ? ". The probation period is over; confirm the employee or extend it below." : ".")
@@ -313,7 +313,7 @@
                         {
                             <tr>
                                 <td>@d.Type.DisplayName()<small><a asp-action="Document" asp-route-id="@Model.Id" asp-route-documentId="@d.UniqueId" target="_blank">@d.OriginalName</a> · @Math.Max(1, d.SizeBytes / 1024) KB</small></td>
-                                <td>@d.CreatedAt.ToLocalTime().ToShortDate()</td>
+                                <td>@d.CreatedAt.ToAppTime().ToShortDate()</td>
                                 <td>
                                     <span class="badge @(d.Status switch { DocumentStatus.Verified => "badge-green", DocumentStatus.Rejected => "badge-orange", _ => "badge-blue" })">@d.Status.DisplayName()</span>
                                     @if (d.ReviewNote is not null)
@@ -453,7 +453,7 @@
             <div class="form-grid">
                 <div class="field">
                     <label for="Revision_EffectiveFrom">Effective from</label>
-                    <input id="Revision_EffectiveFrom" name="Revision.EffectiveFrom" type="date" required value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                    <input id="Revision_EffectiveFrom" name="Revision.EffectiveFrom" type="date" required value="@AppClock.Today.ToString("yyyy-MM-dd")" />
                 </div>
                 <div class="field">
                     <label for="Revision_NewSalary">New monthly salary (₹)</label>

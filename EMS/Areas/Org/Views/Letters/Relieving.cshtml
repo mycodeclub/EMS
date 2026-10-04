@@ -5,13 +5,13 @@
     var last = resignation.LastWorkingDay!.Value;
     ViewData["Title"] = $"Relieving letter {Model.EmpCode}";
     ViewData["LetterTitle"] = "Relieving letter";
-    ViewData["LetterDate"] = (resignation.ActionedAt ?? resignation.SubmittedAt).ToLocalTime().ToString("dd MMMM yyyy");
+    ViewData["LetterDate"] = (resignation.ActionedAt ?? resignation.SubmittedAt).ToAppTime().ToString("dd MMMM yyyy");
 }
 <article class="card slip letter">
     <partial name="_LetterHead" model="Model" />
     <p><b>Subject: Acceptance of resignation and relieving</b></p>
     <p>Dear @Model.FirstName,</p>
-    <p>This refers to your resignation dated @resignation.SubmittedAt.ToLocalTime().ToString("dd MMMM yyyy"). Your resignation has been accepted, and you will be relieved from the services of @organization.Name at the close of business on <b>@last.ToString("dddd, dd MMMM yyyy")</b>.</p>
+    <p>This refers to your resignation dated @resignation.SubmittedAt.ToAppTime().ToString("dd MMMM yyyy"). Your resignation has been accepted, and you will be relieved from the services of @organization.Name at the close of business on <b>@last.ToString("dddd, dd MMMM yyyy")</b>.</p>
     <dl class="slip-meta">
         <div><span>Designation</span><b>@(Model.Designation ?? "—")</b></div>
         <div><span>Department</span><b>@(Model.Department ?? "—")</b></div>

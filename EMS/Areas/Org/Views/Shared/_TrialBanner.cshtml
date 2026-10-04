@@ -1,6 +1,6 @@
 @if (ViewData["TrialEndsOn"] is DateOnly ends)
 {
-    var left = ends.DayNumber - DateOnly.FromDateTime(DateTime.Today).DayNumber;
+    var left = ends.DayNumber - DateOnly.FromDateTime(AppClock.Today).DayNumber;
     <p class="notice @(left <= 7 ? "notice-warn" : null)" role="note">
         @(left >= 0 ? $"Free trial: {left} day{(left == 1 ? "" : "s")} left (until {ends.ToShortDate()})." : $"Your free trial ended on {ends.ToShortDate()}.")
         Questions about plans? Reply to your welcome email.

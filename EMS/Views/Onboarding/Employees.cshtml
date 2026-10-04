@@ -3,7 +3,7 @@
     ViewData["Title"] = "Employees";
     var shifts = ViewData["ShiftOptions"] as List<EMS.Models.Shift> ?? [];
     var nextCode = ViewData["NextCode"] as string;
-    var today = DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd");
+    var today = DateOnly.FromDateTime(AppClock.Today).ToString("yyyy-MM-dd");
 }
 
 <partial name="_Stepper" />

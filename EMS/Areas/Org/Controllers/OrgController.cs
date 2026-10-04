@@ -35,7 +35,7 @@ public abstract class OrgController(OrganizationContext context) : Controller
     /// <summary>Year and month from the query string, defaulting to the current month and never later than it.</summary>
     protected static (int Year, int Month) ResolveMonth(int? year, int? month)
     {
-        var today = DateTime.Today;
+        var today = AppClock.Today;
         if (year is null || month is not (>= 1 and <= 12)) return (today.Year, today.Month);
         var requested = new DateOnly(year.Value, month.Value, 1);
         return requested > DateOnly.FromDateTime(today) ? (today.Year, today.Month) : (requested.Year, requested.Month);

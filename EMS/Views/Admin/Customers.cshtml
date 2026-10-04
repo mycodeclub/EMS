@@ -49,7 +49,7 @@
                 <tbody>
                     @foreach (var trial in Model.Trials)
                     {
-                        var today = DateOnly.FromDateTime(DateTime.Today);
+                        var today = DateOnly.FromDateTime(AppClock.Today);
                         <tr>
                             <td>
                                 @trial.Organization
@@ -60,7 +60,7 @@
                                 <small>@trial.Industry?.DisplayName()</small>
                             </td>
                             <td>@trial.OwnerEmail</td>
-                            <td>@trial.OfferedAt.ToLocalTime().ToShortDate()</td>
+                            <td>@trial.OfferedAt.ToAppTime().ToShortDate()</td>
                             @if (trial.IsDemo)
                             {
                                 <td>—<small>Resets every midnight</small></td>

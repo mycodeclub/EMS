@@ -1,3 +1,5 @@
+using EMS;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.RateLimiting;
@@ -10,6 +12,15 @@ using EMS.Services.Demo;
 using EMS.Services.Email;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// "Today" for attendance, leave and the demo reset is the organization's date, not the server's.
+AppClock.Configure(builder.Configuration["App:TimeZone"]);
+
+// Keep the keys that protect sign-in cookies and forms in App_Data, so a restart of the shared IIS app pool does not
+// sign everyone out.
+builder.Services.AddDataProtection()
+    .SetApplicationName("EMS")
+    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "App_Data", "keys")));
 
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");

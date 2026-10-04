@@ -70,7 +70,7 @@ public partial class SetupService(ApplicationDbContext db)
                 LastName = row.LastName?.Trim(),
                 Mobile = row.Mobile?.Trim(),
                 Designation = row.Designation?.Trim(),
-                DateOfJoining = row.DateOfJoining ?? DateOnly.FromDateTime(DateTime.Today),
+                DateOfJoining = row.DateOfJoining ?? DateOnly.FromDateTime(AppClock.Today),
                 ShiftId = row.ShiftId,
                 MonthlySalary = row.MonthlySalary,
             });

@@ -2,7 +2,7 @@
 @{
     ViewData["Title"] = "Employees";
     var query = ViewData["Query"] as string;
-    var today = DateOnly.FromDateTime(DateTime.Today);
+    var today = DateOnly.FromDateTime(AppClock.Today);
     var checklists = ViewData["Checklists"] as Dictionary<int, EMS.Services.People.Checklist> ?? [];
     var pendingOnly = ViewData["Onboarding"] as string == "pending";
 }

@@ -491,3 +491,7 @@ EMS/App_Data/
 
 # Recorded demo video (regenerate with demo-video/record_demo.py)
 demo-video/*.mp4
+
+# Production settings are written by the deploy workflow; never commit them
+appsettings.Production.json
+publish/

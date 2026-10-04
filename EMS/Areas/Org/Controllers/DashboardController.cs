@@ -18,7 +18,7 @@ public class DashboardController(OrganizationContext context, ApplicationDbConte
         // Employees without a manager role see only their own page.
         if (!AppRoles.OrgManagers.Split(',').Any(User.IsInRole)) return RedirectToAction("Index", "My");
 
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = DateOnly.FromDateTime(AppClock.Today);
         var from = today.AddDays(1 - ChartDays);
 
         var employees = await db.Employees.Include(e => e.Shift)

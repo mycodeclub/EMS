@@ -2,7 +2,7 @@
 @using EMS.Services.Leave
 @{
     ViewData["Title"] = "Leave";
-    var today = DateOnly.FromDateTime(DateTime.Today);
+    var today = DateOnly.FromDateTime(AppClock.Today);
     string Badge(LeaveStatus status) => status switch
     {
         LeaveStatus.Approved => "badge-green",

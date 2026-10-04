@@ -45,7 +45,7 @@
                 {
                     <tr>
                         <td>Relieving letter<small>Last working day @last.ToShortDate()</small></td>
-                        <td>@Model.Accepted.ActionedAt?.ToLocalTime().ToShortDate()</td>
+                        <td>@Model.Accepted.ActionedAt?.ToAppTime().ToShortDate()</td>
                         <td class="num"><a class="btn btn-secondary btn-sm" asp-action="Relieving" asp-route-employeeId="@id">Open</a></td>
                     </tr>
                 }

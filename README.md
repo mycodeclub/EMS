@@ -143,3 +143,30 @@ Table and column names are case-sensitive in PostgreSQL, so quote them: `select 
 - **`address already in use` on port 7134 or 5046**: another copy of the app is running. Stop it (Ctrl+C in its terminal), or find it with `netstat -ano | findstr :7134` and end that process.
 - **`Failed to connect to 127.0.0.1:5432`**: the database is not running. Start Docker Desktop, then `docker compose up -d`.
 - **`relation "..." does not exist`**: the tables are missing or out of date. Run `dotnet ef database update`.
+
+## Deploying to production
+
+Production is the site4now (SmarterASP) IIS site in the FTP folder `ems/`, with the live PostgreSQL database on `pg8001.site4now.net`.
+
+1. Work on `main` (or a feature branch merged into `main`).
+2. Open a pull request **`main` → `release`** and merge it. The `release` branch accepts only pull requests.
+3. `.github/workflows/deploy.yml` then:
+   - builds, and checks that every model change has a migration;
+   - publishes a self-contained `win-x64` build (no .NET install needed on the server, runs out of process under IIS);
+   - writes `appsettings.Production.json` (connection string and super admin login) from GitHub secrets;
+   - applies EF migrations to the live database (if one fails, the live site is not touched);
+   - puts up `app_offline.htm`, uploads over FTPS, and takes it down again. The server's `App_Data` (photos, documents, sign-in keys, mail) is never overwritten.
+
+Settings are in GitHub → **Settings → Environments → production**:
+
+| Kind | Name | Value |
+|------|------|-------|
+| Secret | `CONNECTION_STRING` | Live database connection string |
+| Secret | `FTP_USERNAME`, `FTP_PASSWORD` | site4now FTP login |
+| Secret | `SUPERADMIN_PASSWORD` | Password of the super admin, used only when the account is first created |
+| Variable | `FTP_SERVER` | `win8117.site4now.net` |
+| Variable | `FTP_REMOTE_DIR` | `ems/` |
+| Variable | `FTP_PROTOCOL` | `ftps` |
+| Variable | `SUPERADMIN_EMAIL` | Super admin sign-in email (default `superadmin@ems.local`) |
+
+On first start the app creates the roles, the super admin and the public demo organization, and rebuilds the demo every midnight (India time). Dates such as "today" follow `App:TimeZone` (default `Asia/Kolkata`), not the server's clock. Never put a production connection string or password in the repository.

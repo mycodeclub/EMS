@@ -47,7 +47,7 @@ public class TrialService(
             Phone = input.OwnerPhone.Trim(),
             Industry = input.Industry,
             Owner = owner,
-            TrialEndsOn = DateOnly.FromDateTime(DateTime.Today).AddDays(input.TrialDays),
+            TrialEndsOn = DateOnly.FromDateTime(AppClock.Today).AddDays(input.TrialDays),
             // 24x7 businesses work on rosters, not a holiday list; confirmed during onboarding.
             IsHolidayCalendarApplicable = input.Industry is not (Industry.Hospital or Industry.Hotel),
         };

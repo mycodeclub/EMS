@@ -4,7 +4,7 @@
     var action = ViewContext.RouteData.Values["action"] as string;
     var previous = Model.AddMonths(-1);
     var next = Model.AddMonths(1);
-    var hasNext = next <= DateOnly.FromDateTime(DateTime.Today);
+    var hasNext = next <= DateOnly.FromDateTime(AppClock.Today);
 }
 <nav class="month-nav" aria-label="Month">
     <a class="btn btn-secondary btn-sm" asp-action="@action" asp-route-year="@previous.Year" asp-route-month="@previous.Month" aria-label="Previous month">‹ @previous.ToString("MMM")</a>

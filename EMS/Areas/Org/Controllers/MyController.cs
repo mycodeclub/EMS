@@ -33,7 +33,7 @@ public class MyController(
 
         var records = await RecordsAsync(employee.UniqueId, y, m, ct);
         var byDay = records.GroupBy(a => a.AttendanceDate).ToDictionary(g => g.Key, g => g.OrderBy(a => a.UniqueId).First());
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = DateOnly.FromDateTime(AppClock.Today);
         var days = PayrollCalculator.EmployedRange(employee, y, m) is { } range
             ? Enumerable.Range(0, range.To.DayNumber - range.From.DayNumber + 1).Select(range.From.AddDays)
                 .Where(d => d <= today).Select(d => new MyDay(d, byDay.GetValueOrDefault(d))).ToList()
@@ -82,7 +82,7 @@ public class MyController(
 
     private async Task<IActionResult> LeaveView(Employee employee, LeaveRequestInput input, CancellationToken ct)
     {
-        var year = DateTime.Today.Year;
+        var year = AppClock.Today.Year;
         return View("Leave", new MyLeavePage(employee, year, await leave.BalancesAsync(employee, year, ct),
             await leave.ApplicationsAsync(employee.UniqueId, ct), input));
     }
@@ -96,7 +96,7 @@ public class MyController(
     public async Task<IActionResult> Profile(MyProfileInput input, CancellationToken ct)
     {
         if (await context.EmployeeAsync(ct) is not { } employee) return NoEmployee();
-        if (input.DateOfBirth is { } born && born > DateOnly.FromDateTime(DateTime.Today).AddYears(-14))
+        if (input.DateOfBirth is { } born && born > DateOnly.FromDateTime(AppClock.Today).AddYears(-14))
             ModelState.AddModelError("Input.DateOfBirth", "Check the date of birth.");
         // The same PAN or Aadhaar on two employees is almost always a typing mistake.
         var pan = input.Pan?.Trim().ToUpperInvariant();
@@ -268,7 +268,7 @@ public class MyController(
         if (await context.EmployeeAsync(ct) is not { } employee) return NoEmployee();
         return await ResignationView(employee, new ResignationInput
         {
-            RequestedLastDay = DateOnly.FromDateTime(DateTime.Today).AddDays(employee.NoticePeriodDays),
+            RequestedLastDay = DateOnly.FromDateTime(AppClock.Today).AddDays(employee.NoticePeriodDays),
         }, ct);
     }
 

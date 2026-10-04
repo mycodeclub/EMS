@@ -2,7 +2,7 @@
 @{
     ViewData["Title"] = "Resignation";
     var current = Model.Current;
-    var today = DateOnly.FromDateTime(DateTime.Today);
+    var today = DateOnly.FromDateTime(AppClock.Today);
     var noticeEnds = today.AddDays(Model.Employee.NoticePeriodDays);
 }
 
@@ -20,10 +20,10 @@
     var left = Math.Max(0, last.DayNumber - today.DayNumber);
     List<EMS.Models.Admin.StatTile> stats =
     [
-        new("Status", "On notice", $"Accepted {current.ActionedAt?.ToLocalTime().ToShortDate()}"),
+        new("Status", "On notice", $"Accepted {current.ActionedAt?.ToAppTime().ToShortDate()}"),
         new("Last working day", last.ToString("dd MMM"), last.ToString("dddd, yyyy")),
         new("Days to go", left.ToString(), left == 0 ? "Last day reached" : "Including today"),
-        new("Resigned on", current.SubmittedAt.ToLocalTime().ToString("dd MMM"), $"Asked for {current.RequestedLastDay:dd MMM}"),
+        new("Resigned on", current.SubmittedAt.ToAppTime().ToString("dd MMM"), $"Asked for {current.RequestedLastDay:dd MMM}"),
     ];
     <partial name="_Stats" model="stats" />
     <section class="card card-body">
@@ -34,11 +34,11 @@
 else if (current is { Status: ResignationStatus.Pending })
 {
     <section class="card">
-        <div class="card-head"><h2>Waiting for HR</h2><span>Submitted @current.SubmittedAt.ToLocalTime().ToShortDate()</span></div>
+        <div class="card-head"><h2>Waiting for HR</h2><span>Submitted @current.SubmittedAt.ToAppTime().ToShortDate()</span></div>
         <div class="card-body">
             <dl class="slip-meta" style="margin-top:0">
                 <div><span>Last day asked for</span><b>@current.RequestedLastDay.ToShortDate()</b></div>
-                <div><span>End of notice period</span><b>@current.SubmittedAt.ToLocalTime().AddDays(Model.Employee.NoticePeriodDays).ToShortDate()</b></div>
+                <div><span>End of notice period</span><b>@current.SubmittedAt.ToAppTime().AddDays(Model.Employee.NoticePeriodDays).ToShortDate()</b></div>
             </dl>
             <p class="muted">@current.Reason</p>
             <form method="post" asp-action="WithdrawResignation" asp-route-id="@current.UniqueId" class="form-actions">
@@ -82,7 +82,7 @@ else
                 <tbody>
                     @foreach (var r in Model.History.Where(r => r.UniqueId != current?.UniqueId))
                     {
-                        <tr><td>@r.SubmittedAt.ToLocalTime().ToShortDate()</td><td>@r.RequestedLastDay.ToShortDate()</td><td><span class="badge">@r.Status</span><small>@r.Remarks</small></td></tr>
+                        <tr><td>@r.SubmittedAt.ToAppTime().ToShortDate()</td><td>@r.RequestedLastDay.ToShortDate()</td><td><span class="badge">@r.Status</span><small>@r.Remarks</small></td></tr>
                     }
                 </tbody>
             </table>

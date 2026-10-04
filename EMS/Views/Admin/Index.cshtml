@@ -44,7 +44,7 @@
                         {
                             <tr>
                                 <td>@trial.Organization<small>@trial.OwnerEmail</small></td>
-                                <td>@trial.OfferedAt.ToLocalTime().ToShortDate()</td>
+                                <td>@trial.OfferedAt.ToAppTime().ToShortDate()</td>
                                 <td>@trial.TrialEndsOn?.ToShortDate()</td>
                                 <td><partial name="_TrialStep" model="trial.Step" /></td>
                             </tr>
