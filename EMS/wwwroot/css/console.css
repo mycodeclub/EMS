@@ -358,3 +358,16 @@ input[type=file]::file-selector-button:hover { background: var(--bg-alt); }
 .decide input { width: 160px; padding: 5px 10px; font-size: 13px; }
 .decide input[type=date] { width: 150px; }
 @media (max-width: 520px) { .profile-head { flex-direction: column; } }
+
+/* ---------- Onboarding checklist ---------- */
+.avatar-sm { width: 56px; height: 56px; font-size: 20px; }
+.progress { height: 6px; margin: 0 16px; border-radius: 980px; background: var(--bg-alt); overflow: hidden; }
+.progress span { display: block; height: 100%; background: var(--green, #34c759); border-radius: inherit; }
+.checklist { list-style: none; margin: 8px 0 0; padding: 0 16px 8px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; }
+.checklist li { display: grid; grid-template-columns: 22px 1fr auto; gap: 10px; align-items: start; padding: 9px 0; border-bottom: 1px dashed var(--hair); font-size: 14px; }
+.checklist li small { display: block; color: var(--orange); font-size: 12px; }
+.checklist li .muted { font-size: 12px; }
+.checklist .tick { display: inline-flex; width: 20px; height: 20px; align-items: center; justify-content: center; border-radius: 50%; border: 1.5px solid var(--line); color: #fff; font-size: 12px; font-weight: 700; }
+.checklist li.done .tick { background: var(--green, #34c759); border-color: var(--green, #34c759); }
+.checklist li.done b { font-weight: 500; color: var(--muted); }
+@media (max-width: 720px) { .checklist { grid-template-columns: 1fr; } }

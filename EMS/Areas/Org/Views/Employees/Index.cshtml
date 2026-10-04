@@ -3,6 +3,8 @@
     ViewData["Title"] = "Employees";
     var query = ViewData["Query"] as string;
     var today = DateOnly.FromDateTime(DateTime.Today);
+    var checklists = ViewData["Checklists"] as Dictionary<int, EMS.Services.People.Checklist> ?? [];
+    var pendingOnly = ViewData["Onboarding"] as string == "pending";
 }
 
 <header class="page-head">
@@ -14,6 +16,7 @@
         <form method="get" class="search" role="search">
             <input type="search" name="q" value="@query" placeholder="Search name, code, designation" aria-label="Search employees" />
         </form>
+        <a class="btn btn-secondary" asp-action="Index" asp-route-onboarding="@(pendingOnly ? null : "pending")">@(pendingOnly ? "Show everyone" : "Onboarding pending")</a>
         <a class="btn btn-secondary" asp-controller="Import" asp-action="Index">Import</a>
         <a class="btn" asp-action="Create">Add employee</a>
     </div>
@@ -21,13 +24,13 @@
 
 <section class="card">
     <div class="card-head">
-        <h2>@(query is null ? "All employees" : $"Results for \"{query}\"")</h2>
+        <h2>@(query is not null ? $"Results for \"{query}\"" : pendingOnly ? "Onboarding pending" : "All employees")</h2>
         <span>@Model.Count employee@(Model.Count == 1 ? "" : "s")</span>
     </div>
     @if (Model.Count == 0)
     {
         <div class="empty">
-            <p>@(query is null ? "No employees yet." : "No employees match your search.")</p>
+            <p>@(query is not null ? "No employees match your search." : pendingOnly ? "Everyone has finished onboarding." : "No employees yet.")</p>
             <p><a class="btn btn-sm" asp-action="Create">Add employee</a></p>
         </div>
     }
@@ -40,11 +43,11 @@
                         <th>Code</th>
                         <th>Name</th>
                         <th>Designation</th>
-                        <th>Shift</th>
                         <th>Mobile</th>
                         <th>Joined</th>
                         <th class="num">Monthly salary</th>
                         <th>Status</th>
+                        <th>Onboarding</th>
                         <th><span class="sr-only">Actions</span></th>
                     </tr>
                 </thead>
@@ -55,8 +58,7 @@
                         <tr>
                             <td class="mono">@e.EmpCode</td>
                             <td><a asp-action="Edit" asp-route-id="@e.UniqueId">@e.FullName</a><small>@e.Department</small></td>
-                            <td>@e.Designation</td>
-                            <td>@(e.Shift?.Name ?? "—")</td>
+                            <td>@e.Designation<small>@(e.Shift?.Name ?? "No fixed") shift</small></td>
                             <td>@e.Mobile</td>
                             <td>@e.DateOfJoining.ToShortDate()</td>
                             <td class="num">@(e.MonthlySalary is { } salary ? salary.ToRupees() : "—")</td>
@@ -68,6 +70,19 @@
                                 else
                                 {
                                     <span class="badge @(e.Status == EmployeeStatus.Active ? "badge-green" : "badge-blue")">@e.Status.DisplayName()</span>
+                                }
+                            </td>
+                            <td>
+                                @if (checklists.GetValueOrDefault(e.UniqueId) is { } list)
+                                {
+                                    <a asp-action="Edit" asp-route-id="@e.UniqueId" asp-fragment="documents" class="badge @(list.IsComplete ? "badge-green" : "badge-orange")"
+                                       title="@(list.IsComplete ? "Joining checklist complete" : string.Join(", ", list.Items.Where(i => !i.Done).Select(i => i.Label)))">
+                                        @(list.IsComplete ? "Complete" : $"{list.Done}/{list.Total}")
+                                    </a>
+                                    @if (list.DocumentsToVerify > 0)
+                                    {
+                                        <small>@list.DocumentsToVerify to verify</small>
+                                    }
                                 }
                             </td>
                             <td>

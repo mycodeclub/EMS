@@ -8,18 +8,47 @@
         new("Leave to approve", Model.PendingLeave.Count.ToString(), $"{Model.PendingLeave.Sum(a => a.TotalDays):0.#} days in total"),
         new("Resignations to review", pendingResignations.ToString()),
         new("On notice", onNotice.Count.ToString(), onNotice.Count > 0 ? $"Next leaves {onNotice.Min(r => r.LastWorkingDay)!.Value.ToShortDate()}" : "Nobody serving notice"),
-        new("Decided recently", Model.RecentLeave.Count.ToString(), "Leave approved or rejected"),
+        new("Documents to verify", Model.DocumentsToVerify.Count.ToString(), "Joining documents from employees"),
     ];
 }
 
 <header class="page-head">
     <div>
         <h1>Leave &amp; resignations</h1>
-        <p>Approve leave (the days are marked "On leave" in attendance) and accept resignations with the last working day.</p>
+        <p>Verify joining documents, approve leave (the days are marked "On leave" in attendance) and accept resignations with the last working day.</p>
     </div>
 </header>
 
 <partial name="_Stats" model="stats" />
+
+@if (Model.DocumentsToVerify.Count > 0)
+{
+    <section class="card">
+        <div class="card-head"><h2>Joining documents to verify</h2><span>Check each against the original</span></div>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Employee</th><th>Document</th><th>Uploaded</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var d in Model.DocumentsToVerify)
+                    {
+                        <tr>
+                            <td>@d.Employee.FullName<small>@d.Employee.EmpCode</small></td>
+                            <td>@d.Type.DisplayName()<small><a asp-controller="Employees" asp-action="Document" asp-route-id="@d.EmployeeId" asp-route-documentId="@d.UniqueId" target="_blank">@d.OriginalName</a></small></td>
+                            <td>@d.CreatedAt.ToLocalTime().ToShortDate()</td>
+                            <td>
+                                <form method="post" asp-controller="Employees" asp-action="ReviewDocument" asp-route-id="@d.EmployeeId" asp-route-documentId="@d.UniqueId" asp-route-returnTo="requests" class="decide">
+                                    <input name="note" maxlength="500" placeholder="Note (needed to reject)" aria-label="Note" />
+                                    <button type="submit" name="verify" value="true" class="btn btn-sm">Verify</button>
+                                    <button type="submit" name="verify" value="false" class="btn btn-danger btn-sm">Reject</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+}
 
 <section class="card">
     <div class="card-head"><h2>Leave waiting for approval</h2><span>@Model.PendingLeave.Count application@(Model.PendingLeave.Count == 1 ? "" : "s")</span></div>

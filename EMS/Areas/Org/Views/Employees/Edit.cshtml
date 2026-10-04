@@ -1,24 +1,69 @@
 @model EmployeeInput
 @using Microsoft.AspNetCore.Mvc.Rendering
+@using EMS.Services.People
 @{
     var isNew = Model.Id is null;
     ViewData["Title"] = isNew ? "Add employee" : $"Edit {Model.FirstName}";
     var shifts = ViewData["Shifts"] as List<SelectListItem> ?? [];
+    var managers = ViewData["Managers"] as List<SelectListItem> ?? [];
     var revisions = ViewData["Revisions"] as List<SalaryRevision> ?? [];
+    var documents = ViewData["Documents"] as List<EmployeeDocument> ?? [];
+    var checklist = ViewData["Checklist"] as Checklist;
+    var employee = ViewData["Employee"] as Employee;
+    var canGrantManagers = ViewData["CanGrantManagers"] is true;
+    var roles = EMS.Areas.Org.Controllers.EmployeesController.StaffRoles.Where(r => canGrantManagers || r.Role == AppRoles.Employee).ToList();
+    var initials = string.Concat(new[] { Model.FirstName, Model.LastName }.Where(n => !string.IsNullOrEmpty(n)).Select(n => n![0]));
 }
 
 <header class="page-head">
-    <div>
-        <h1>@(isNew ? "Add employee" : $"{Model.FirstName} {Model.LastName}")</h1>
-        <p>@(isNew ? "Only first name and joining date are required; fill in the rest when you have it." : $"Employee code {Model.EmpCode}")</p>
+    <div class="profile-head" style="align-items:center;gap:16px">
+        @if (employee?.PhotoPath is not null)
+        {
+            <img class="avatar avatar-sm" src="@Url.Action("Photo", new { id = Model.Id })" alt="" width="56" height="56" />
+        }
+        else if (!isNew)
+        {
+            <span class="avatar avatar-sm" aria-hidden="true">@initials</span>
+        }
+        <div>
+            <h1>@(isNew ? "Add employee" : $"{Model.FirstName} {Model.LastName}")</h1>
+            <p>
+                @if (isNew)
+                {
+                    @:Only first name and joining date are required. The employee can fill in their own details and documents once they have a login.
+                }
+                else
+                {
+                    @:Employee code @Model.EmpCode ·
+                    <span class="badge @(Model.Status == EmployeeStatus.Active ? "badge-green" : "badge-blue")">@Model.Status.DisplayName()</span>
+                    @if (checklist is not null)
+                    {
+                        <a href="#documents" class="badge @(checklist.IsComplete ? "badge-green" : "badge-orange")">Onboarding @checklist.Done/@checklist.Total</a>
+                    }
+                }
+            </p>
+        </div>
     </div>
     @if (!isNew)
     {
         <div class="page-actions">
+            <a class="btn btn-secondary btn-sm" href="#documents">Joining checklist</a>
             <a class="btn btn-secondary btn-sm" asp-controller="Letters" asp-action="Index" asp-route-employeeId="@Model.Id">Letters</a>
         </div>
     }
 </header>
+
+@if (employee is { Status: EmployeeStatus.OnProbation })
+{
+    var due = employee.ProbationEndsOn;
+    var overdue = due is { } d && d < DateOnly.FromDateTime(DateTime.Today);
+    <form method="post" asp-action="Confirm" asp-route-id="@Model.Id" class="notice @(overdue ? "notice-warn" : null) impersonating" style="max-width:860px">
+        <span>
+            <b>On probation</b>@(due is { } end ? $" until {end.ToShortDate()}" : "")@(overdue ? ". The probation period is over; confirm the employee or extend it below." : ".")
+        </span>
+        <button type="submit" class="btn btn-secondary btn-sm">Confirm employment</button>
+    </form>
+}
 
 <section class="card form-card" style="max-width:860px">
     <form asp-action="Save" method="post" novalidate>
@@ -44,6 +89,7 @@
             <div class="field">
                 <label asp-for="DateOfBirth"></label>
                 <input asp-for="DateOfBirth" type="date" />
+                <span asp-validation-for="DateOfBirth"></span>
             </div>
             <div class="field">
                 <label asp-for="Mobile"></label>
@@ -54,6 +100,23 @@
                 <label asp-for="Email"></label>
                 <input asp-for="Email" type="email" />
                 <span asp-validation-for="Email"></span>
+            </div>
+            <div class="field">
+                <label asp-for="HighestQualification"></label>
+                <input asp-for="HighestQualification" placeholder="e.g. B.Com, Mumbai University" />
+            </div>
+            <div class="field">
+                <label asp-for="EmergencyContactName"></label>
+                <input asp-for="EmergencyContactName" placeholder="Name (relation)" />
+            </div>
+            <div class="field span-2">
+                <label asp-for="CurrentAddress"></label>
+                <textarea asp-for="CurrentAddress" rows="2" maxlength="500"></textarea>
+            </div>
+            <div class="field">
+                <label asp-for="EmergencyContactPhone"></label>
+                <input asp-for="EmergencyContactPhone" type="tel" />
+                <span asp-validation-for="EmergencyContactPhone"></span>
             </div>
         </div>
 
@@ -73,9 +136,10 @@
                 <span asp-validation-for="EmpCode"></span>
             </div>
             <div class="field">
-                <label asp-for="ShiftId"></label>
-                <select asp-for="ShiftId" asp-items="shifts"><option value="">No fixed shift</option></select>
-                <span asp-validation-for="ShiftId"></span>
+                <label asp-for="AttendanceId"></label>
+                <input asp-for="AttendanceId" placeholder="Same as the employee code" style="text-transform:uppercase" />
+                <span class="hint">Enrolment ID on the biometric device. Imported punches are matched by it.</span>
+                <span asp-validation-for="AttendanceId"></span>
             </div>
             <div class="field">
                 <label asp-for="Department"></label>
@@ -86,21 +150,35 @@
                 <input asp-for="Designation" />
             </div>
             <div class="field">
-                <label asp-for="DateOfJoining"></label>
-                <input asp-for="DateOfJoining" type="date" />
-                <span asp-validation-for="DateOfJoining"></span>
+                <label asp-for="ReportingManagerId"></label>
+                <select asp-for="ReportingManagerId" asp-items="managers"><option value="">No manager</option></select>
+                <span asp-validation-for="ReportingManagerId"></span>
             </div>
             <div class="field">
-                <label asp-for="DateOfLeaving"></label>
-                <input asp-for="DateOfLeaving" type="date" />
-                <span class="hint">Only when the employee has left or is serving notice.</span>
-                <span asp-validation-for="DateOfLeaving"></span>
+                <label asp-for="EmploymentType"></label>
+                <select asp-for="EmploymentType" asp-items="Html.GetEnumSelectList<EmploymentType>()"></select>
+            </div>
+            <div class="field">
+                <label asp-for="ShiftId"></label>
+                <select asp-for="ShiftId" asp-items="shifts"><option value="">No fixed shift</option></select>
+                <span asp-validation-for="ShiftId"></span>
             </div>
             <div class="field">
                 <label asp-for="MonthlySalary"></label>
                 <input asp-for="MonthlySalary" type="number" min="0" step="100" />
                 <span class="hint">Gross per month. Salary slips reduce it for unpaid days.</span>
                 <span asp-validation-for="MonthlySalary"></span>
+            </div>
+            <div class="field">
+                <label asp-for="DateOfJoining"></label>
+                <input asp-for="DateOfJoining" type="date" />
+                <span asp-validation-for="DateOfJoining"></span>
+            </div>
+            <div class="field">
+                <label asp-for="ProbationEndsOn"></label>
+                <input asp-for="ProbationEndsOn" type="date" />
+                <span class="hint">Leave empty for no probation.@(employee?.ConfirmedOn is { } confirmed ? $" Confirmed on {confirmed.ToShortDate()}." : "")</span>
+                <span asp-validation-for="ProbationEndsOn"></span>
             </div>
             <div class="field">
                 <label asp-for="Status"></label>
@@ -112,7 +190,77 @@
                 <span class="hint">Shown to the employee when they resign, and in the offer letter.</span>
                 <span asp-validation-for="NoticePeriodDays"></span>
             </div>
+            <div class="field">
+                <label asp-for="DateOfLeaving"></label>
+                <input asp-for="DateOfLeaving" type="date" />
+                <span class="hint">Only when the employee has left or is serving notice.</span>
+                <span asp-validation-for="DateOfLeaving"></span>
+            </div>
         </div>
+
+        <h2 class="form-section">IDs and salary account</h2>
+        @if (employee is not null && (employee.Pan is not null || employee.Aadhaar is not null))
+        {
+            <dl class="slip-meta" style="margin-top:0">
+                <div><span>PAN on record</span><b>@(Masks.Pan(employee.Pan) ?? "Not given")</b></div>
+                <div><span>Aadhaar on record</span><b>@(Masks.Aadhaar(employee.Aadhaar) ?? "Not given")</b></div>
+            </dl>
+        }
+        <div class="form-grid">
+            <div class="field">
+                <label asp-for="Pan">@(employee?.Pan is null ? "PAN" : "Correct PAN")</label>
+                <input asp-for="Pan" value="" maxlength="10" placeholder="ABCDE1234F" autocomplete="off" style="text-transform:uppercase" />
+                @if (employee?.Pan is not null)
+                {
+                    <span class="hint">Leave empty to keep the one on record.</span>
+                }
+                <span asp-validation-for="Pan"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Aadhaar">@(employee?.Aadhaar is null ? "Aadhaar" : "Correct Aadhaar")</label>
+                <input asp-for="Aadhaar" value="" maxlength="12" inputmode="numeric" placeholder="12 digits" autocomplete="off" />
+                <span class="hint">Shown masked after saving.</span>
+                <span asp-validation-for="Aadhaar"></span>
+            </div>
+            <div class="field">
+                <label asp-for="BankAccountHolder"></label>
+                <input asp-for="BankAccountHolder" />
+            </div>
+            <div class="field">
+                <label asp-for="BankName"></label>
+                <input asp-for="BankName" />
+            </div>
+            <div class="field">
+                <label asp-for="BankAccountNumber"></label>
+                <input asp-for="BankAccountNumber" inputmode="numeric" autocomplete="off" />
+                <span asp-validation-for="BankAccountNumber"></span>
+            </div>
+            <div class="field">
+                <label asp-for="BankIfsc"></label>
+                <input asp-for="BankIfsc" maxlength="11" style="text-transform:uppercase" />
+                <span asp-validation-for="BankIfsc"></span>
+            </div>
+        </div>
+
+        @if (isNew)
+        {
+            <h2 class="form-section">Login</h2>
+            <div class="form-grid">
+                <div class="field">
+                    <div class="choice"><label><input asp-for="CreateLogin" /> Give login access now <small>A temporary password is shown once and emailed to the employee's email above.</small></label></div>
+                </div>
+                <div class="field">
+                    <label asp-for="LoginRole">Access</label>
+                    <select asp-for="LoginRole">
+                        @foreach (var (role, label) in roles)
+                        {
+                            <option value="@role">@label</option>
+                        }
+                    </select>
+                    <span asp-validation-for="LoginRole"></span>
+                </div>
+            </div>
+        }
 
         <div class="form-actions">
             <button type="submit" class="btn">@(isNew ? "Add employee" : "Save changes")</button>
@@ -130,11 +278,99 @@
     }
 </section>
 
+@if (!isNew && checklist is not null)
+{
+    <section class="card" id="documents">
+        <div class="card-head">
+            <h2>Joining checklist</h2>
+            <span>@checklist.Done of @checklist.Total done@(checklist.DocumentsToVerify > 0 ? $" · {checklist.DocumentsToVerify} to verify" : "")</span>
+        </div>
+        <div class="progress" role="progressbar" aria-valuenow="@checklist.Percent" aria-valuemin="0" aria-valuemax="100"><span style="width:@checklist.Percent%"></span></div>
+        <ul class="checklist">
+            @foreach (var item in checklist.Items)
+            {
+                <li class="@(item.Done ? "done" : null)">
+                    <span class="tick" aria-hidden="true">@(item.Done ? "✓" : "")</span>
+                    <span>
+                        <b>@item.Label</b>
+                        @if (item.Note is not null)
+                        {
+                            <small>@item.Note</small>
+                        }
+                    </span>
+                    <span class="muted">@(item.Owner == ChecklistOwner.Hr ? "HR" : "Employee")</span>
+                </li>
+            }
+        </ul>
+
+        @if (documents.Count > 0)
+        {
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Document</th><th>Uploaded</th><th>Status</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var d in documents)
+                        {
+                            <tr>
+                                <td>@d.Type.DisplayName()<small><a asp-action="Document" asp-route-id="@Model.Id" asp-route-documentId="@d.UniqueId" target="_blank">@d.OriginalName</a> · @Math.Max(1, d.SizeBytes / 1024) KB</small></td>
+                                <td>@d.CreatedAt.ToLocalTime().ToShortDate()</td>
+                                <td>
+                                    <span class="badge @(d.Status switch { DocumentStatus.Verified => "badge-green", DocumentStatus.Rejected => "badge-orange", _ => "badge-blue" })">@d.Status.DisplayName()</span>
+                                    @if (d.ReviewNote is not null)
+                                    {
+                                        <small>@d.ReviewNote</small>
+                                    }
+                                </td>
+                                <td>
+                                    @if (d.Status == DocumentStatus.Pending)
+                                    {
+                                        <form method="post" asp-action="ReviewDocument" asp-route-id="@Model.Id" asp-route-documentId="@d.UniqueId" class="decide">
+                                            <input name="note" maxlength="500" placeholder="Note (needed to reject)" aria-label="Note" />
+                                            <button type="submit" name="verify" value="true" class="btn btn-sm">Verify</button>
+                                            <button type="submit" name="verify" value="false" class="btn btn-danger btn-sm">Reject</button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <form method="post" asp-action="DeleteDocument" asp-route-id="@Model.Id" asp-route-documentId="@d.UniqueId" class="row-actions">
+                                            <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        <form method="post" asp-action="UploadDocument" asp-route-id="@Model.Id" enctype="multipart/form-data" class="card-body">
+            <div class="form-grid">
+                <div class="field">
+                    <label for="doc-type">Document</label>
+                    <select id="doc-type" name="type" required>
+                        @foreach (var type in Enum.GetValues<DocumentType>())
+                        {
+                            <option value="@type">@type.DisplayName()</option>
+                        }
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="doc-file">File</label>
+                    <input id="doc-file" type="file" name="file" accept="application/pdf,image/jpeg,image/png,image/webp" required />
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-secondary">Upload document</button>
+                <span class="hint" style="font-size:12px;color:var(--muted)">PDF or image, up to 5 MB. Documents HR uploads are marked verified; the employee can also upload from their Joining checklist.</span>
+            </div>
+        </form>
+    </section>
+}
+
 @if (!isNew)
 {
     var login = ViewData["Login"] as (string? Email, string? Role)?;
-    var canGrantManagers = ViewData["CanGrantManagers"] is true;
-    var roles = EMS.Areas.Org.Controllers.EmployeesController.StaffRoles.Where(r => canGrantManagers || r.Role == AppRoles.Employee).ToList();
     <section class="card" style="max-width:860px" id="login">
         <div class="card-head">
             <h2>Login access</h2>

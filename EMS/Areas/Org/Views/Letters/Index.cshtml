@@ -25,6 +25,14 @@
                     <td>@Model.Employee.DateOfJoining.AddDays(-14).ToShortDate()</td>
                     <td class="num"><a class="btn btn-secondary btn-sm" asp-action="Offer" asp-route-employeeId="@id">Open</a></td>
                 </tr>
+                @if (Model.Employee.ConfirmedOn is { } confirmed)
+                {
+                    <tr>
+                        <td>Confirmation letter<small>Probation completed; confirmed as @Model.Employee.Designation</small></td>
+                        <td>@confirmed.ToShortDate()</td>
+                        <td class="num"><a class="btn btn-secondary btn-sm" asp-action="Confirmation" asp-route-employeeId="@id">Open</a></td>
+                    </tr>
+                }
                 @foreach (var r in Model.Revisions)
                 {
                     <tr>

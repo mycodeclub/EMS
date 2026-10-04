@@ -18,7 +18,8 @@ namespace EMS.Areas.Org.Controllers;
 /// </summary>
 [Authorize(Roles = AppRoles.SelfService)]
 public class MyController(
-    OrganizationContext context, ApplicationDbContext db, LeaveService leave, ResignationService resignations, PhotoStore photos)
+    OrganizationContext context, ApplicationDbContext db, LeaveService leave, ResignationService resignations, PhotoStore photos,
+    DocumentStore documents, OnboardingChecklist checklists)
     : OrgController(context)
 {
     private readonly OrganizationContext context = context;
@@ -39,6 +40,7 @@ public class MyController(
             : [];
         var pay = days.Count > 0 ? PayrollCalculator.Calculate(employee, y, m, records) : null;
         ViewData["Resignation"] = await resignations.CurrentAsync(employee.UniqueId, ct);
+        ViewData["Checklist"] = await checklists.ForAsync(employee, ct);
         return View(new MyMonth(y, m, employee, days, pay));
     }
 
@@ -95,7 +97,15 @@ public class MyController(
     {
         if (await context.EmployeeAsync(ct) is not { } employee) return NoEmployee();
         if (input.DateOfBirth is { } born && born > DateOnly.FromDateTime(DateTime.Today).AddYears(-14))
-            ModelState.AddModelError(nameof(input.DateOfBirth), "Check the date of birth.");
+            ModelState.AddModelError("Input.DateOfBirth", "Check the date of birth.");
+        // The same PAN or Aadhaar on two employees is almost always a typing mistake.
+        var pan = input.Pan?.Trim().ToUpperInvariant();
+        var aadhaar = input.Aadhaar?.Trim();
+        var others = db.Employees.Where(e => e.OrganizationId == employee.OrganizationId && e.UniqueId != employee.UniqueId);
+        if (!string.IsNullOrEmpty(pan) && await others.AnyAsync(e => e.Pan == pan, ct))
+            ModelState.AddModelError("Input.Pan", "This PAN is already on another employee's record. Check it, or ask HR.");
+        if (!string.IsNullOrEmpty(aadhaar) && await others.AnyAsync(e => e.Aadhaar == aadhaar, ct))
+            ModelState.AddModelError("Input.Aadhaar", "This Aadhaar number is already on another employee's record. Check it, or ask HR.");
         if (!ModelState.IsValid) return await ProfileView(employee, input, ct);
 
         input.ApplyTo(employee);
@@ -104,7 +114,7 @@ public class MyController(
         return RedirectToAction(nameof(Profile));
     }
 
-    [HttpPost, ValidateAntiForgeryToken, RequestSizeLimit(PhotoStore.MaxBytes + 64 * 1024)]
+    [HttpPost, ValidateAntiForgeryToken, RequestSizeLimit(PhotoStore.Limit + 64 * 1024)]
     public async Task<IActionResult> UploadPhoto(IFormFile? photo, CancellationToken ct)
     {
         if (await context.EmployeeAsync(ct) is not { } employee) return NoEmployee();
@@ -114,7 +124,7 @@ public class MyController(
             return RedirectToAction(nameof(Profile));
         }
 
-        var (name, error) = await photos.SaveAsync(employee.UniqueId, photo, ct);
+        var (name, _, error) = await photos.SaveAsync(employee.UniqueId, photo, ct);
         if (error is not null)
         {
             TempData["Error"] = error;
@@ -192,6 +202,64 @@ public class MyController(
         employee.PriorExperienceMonths = Math.Min(720, (await db.EmployeeExperiences.Where(x => x.EmployeeId == employee.UniqueId).ToListAsync(ct)).Sum(x => x.Months));
         await db.SaveChangesAsync(ct);
     }
+
+    // ---------- Joining checklist ----------
+
+    public async Task<IActionResult> Checklist(CancellationToken ct)
+    {
+        if (await context.EmployeeAsync(ct) is not { } employee) return NoEmployee();
+        var uploaded = await db.EmployeeDocuments.Where(d => d.EmployeeId == employee.UniqueId).OrderByDescending(d => d.UniqueId).ToListAsync(ct);
+        return View(new MyChecklistPage(employee, OnboardingChecklist.Build(employee, uploaded), uploaded));
+    }
+
+    /// <summary>The employee uploads a joining document; HR verifies it.</summary>
+    [HttpPost, ValidateAntiForgeryToken, RequestSizeLimit(DocumentStore.Limit + 64 * 1024)]
+    public async Task<IActionResult> UploadDocument(DocumentType type, IFormFile? file, CancellationToken ct)
+    {
+        if (await context.EmployeeAsync(ct) is not { } employee) return NoEmployee();
+        if (!Enum.IsDefined(type) || file is null)
+        {
+            TempData["Error"] = "Choose the document and a file to upload.";
+            return RedirectToAction(nameof(Checklist));
+        }
+
+        var (name, contentType, error) = await documents.SaveAsync(employee.UniqueId, file, ct);
+        if (error is not null)
+        {
+            TempData["Error"] = error;
+            return RedirectToAction(nameof(Checklist));
+        }
+        db.EmployeeDocuments.Add(new EmployeeDocument
+        {
+            EmployeeId = employee.UniqueId, Type = type, FileName = name!, OriginalName = Path.GetFileName(file.FileName),
+            ContentType = contentType!, SizeBytes = file.Length,
+        });
+        await db.SaveChangesAsync(ct);
+        TempData["Message"] = $"{type.DisplayName()} uploaded. HR will verify it.";
+        return RedirectToAction(nameof(Checklist));
+    }
+
+    /// <summary>Removes the employee's own upload while HR has not verified it.</summary>
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteDocument(int id, CancellationToken ct)
+    {
+        if (await context.EmployeeAsync(ct) is not { } employee) return NoEmployee();
+        if (await db.EmployeeDocuments.FirstOrDefaultAsync(d => d.UniqueId == id && d.EmployeeId == employee.UniqueId, ct) is { Status: not DocumentStatus.Verified } document)
+        {
+            db.EmployeeDocuments.Remove(document);
+            await db.SaveChangesAsync(ct);
+            TempData["Message"] = $"{document.Type.DisplayName()} removed.";
+        }
+        else TempData["Error"] = "Verified documents can only be removed by HR.";
+        return RedirectToAction(nameof(Checklist));
+    }
+
+    public async Task<IActionResult> Document(int id, CancellationToken ct) =>
+        await context.EmployeeAsync(ct) is { } employee
+        && await db.EmployeeDocuments.FirstOrDefaultAsync(d => d.UniqueId == id && d.EmployeeId == employee.UniqueId, ct) is { } document
+        && documents.PathOf(document.FileName) is { } path
+            ? PhysicalFile(path, document.ContentType)
+            : NotFound();
 
     // ---------- Resignation ----------
 

@@ -61,6 +61,12 @@ public class Employee : AuditableEntity
 
     public EmployeeStatus Status { get; set; } = EmployeeStatus.Active;
 
+    [Display(Name = "Employment type")] public EmploymentType EmploymentType { get; set; } = EmploymentType.FullTime;
+
+    /// <summary>Last day of probation; the employee is confirmed after it (ConfirmedOn).</summary>
+    [Display(Name = "Probation ends on")] public DateOnly? ProbationEndsOn { get; set; }
+    public DateOnly? ConfirmedOn { get; set; }
+
     /// <summary>Days of notice the employee must serve after resigning.</summary>
     [Range(0, 180), Display(Name = "Notice period (days)")]
     public int NoticePeriodDays { get; set; } = 30;
@@ -99,4 +105,5 @@ public class Employee : AuditableEntity
     public ICollection<EmployeeExperience> Experiences { get; set; } = [];
     public ICollection<SalaryRevision> SalaryRevisions { get; set; } = [];
     public ICollection<Resignation> Resignations { get; set; } = [];
+    public ICollection<EmployeeDocument> Documents { get; set; } = [];
 }

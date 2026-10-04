@@ -1,0 +1,131 @@
+@model MyChecklistPage
+@using EMS.Services.People
+@{
+    ViewData["Title"] = "Joining checklist";
+    var list = Model.Checklist;
+    var neededTypes = OnboardingChecklist.RequiredDocuments(Model.Employee);
+}
+
+<header class="page-head">
+    <div>
+        <h1>Joining checklist</h1>
+        <p>@(list.IsComplete ? "Everything is done. Welcome aboard!" : "Finish these so HR can complete your joining. Your details go under My profile; documents are uploaded here.")</p>
+    </div>
+    <a class="btn btn-secondary" asp-action="Profile">Open my profile</a>
+</header>
+
+<section class="card">
+    <div class="card-head">
+        <h2>@list.Done of @list.Total done</h2>
+        <span>@list.Percent%</span>
+    </div>
+    <div class="progress" role="progressbar" aria-valuenow="@list.Percent" aria-valuemin="0" aria-valuemax="100"><span style="width:@list.Percent%"></span></div>
+    <ul class="checklist">
+        @foreach (var item in list.Items)
+        {
+            <li class="@(item.Done ? "done" : null)">
+                <span class="tick" aria-hidden="true">@(item.Done ? "✓" : "")</span>
+                <span>
+                    <b>@item.Label</b>
+                    @if (item.Note is not null)
+                    {
+                        <small>@item.Note</small>
+                    }
+                </span>
+                <span class="muted">
+                    @if (item.Done)
+                    {
+                        @:Done
+                    }
+                    else if (item.Owner == ChecklistOwner.Hr)
+                    {
+                        @:HR will do this
+                    }
+                    else if (item.Document is null)
+                    {
+                        <a asp-action="Profile">Add in profile</a>
+                    }
+                    else if (item.DocumentStatus == DocumentStatus.Pending)
+                    {
+                        @:With HR
+                    }
+                    else
+                    {
+                        <a href="#upload" data-doc="@item.Document">Upload</a>
+                    }
+                </span>
+            </li>
+        }
+    </ul>
+</section>
+
+<section class="card form-card" id="upload" style="max-width:860px">
+    <h2 class="form-section" style="margin-top:0">Upload a document</h2>
+    <form method="post" asp-action="UploadDocument" enctype="multipart/form-data">
+        <div class="form-grid">
+            <div class="field">
+                <label for="doc-type">Document</label>
+                <select id="doc-type" name="type" required>
+                    @foreach (var type in neededTypes.Concat(Enum.GetValues<DocumentType>().Except(neededTypes)))
+                    {
+                        <option value="@type">@type.DisplayName()@(neededTypes.Contains(type) ? "" : " (optional)")</option>
+                    }
+                </select>
+            </div>
+            <div class="field">
+                <label for="doc-file">File</label>
+                <input id="doc-file" type="file" name="file" accept="application/pdf,image/jpeg,image/png,image/webp" required />
+                <span class="hint">PDF or a clear photo, up to 5 MB.</span>
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn">Upload</button>
+        </div>
+    </form>
+</section>
+
+@if (Model.Documents.Count > 0)
+{
+    <section class="card">
+        <div class="card-head"><h2>My documents</h2><span>@Model.Documents.Count uploaded</span></div>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Document</th><th>Uploaded</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var d in Model.Documents)
+                    {
+                        <tr>
+                            <td>@d.Type.DisplayName()<small><a asp-action="Document" asp-route-id="@d.UniqueId" target="_blank">@d.OriginalName</a></small></td>
+                            <td>@d.CreatedAt.ToLocalTime().ToShortDate()</td>
+                            <td>
+                                <span class="badge @(d.Status switch { DocumentStatus.Verified => "badge-green", DocumentStatus.Rejected => "badge-orange", _ => "badge-blue" })">@d.Status.DisplayName()</span>
+                                @if (d.ReviewNote is not null)
+                                {
+                                    <small>HR: @d.ReviewNote</small>
+                                }
+                            </td>
+                            <td class="num">
+                                @if (d.Status != DocumentStatus.Verified)
+                                {
+                                    <form method="post" asp-action="DeleteDocument" asp-route-id="@d.UniqueId">
+                                        <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+}
+
+@section Scripts {
+    <script>
+        // "Upload" next to a checklist item picks that document in the form.
+        document.querySelectorAll('[data-doc]').forEach(a => a.addEventListener('click', () => {
+            document.getElementById('doc-type').value = a.dataset.doc;
+            document.getElementById('doc-file').focus();
+        }));
+    </script>
+}

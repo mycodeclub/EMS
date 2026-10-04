@@ -38,6 +38,7 @@ public class DemoSeeder(
     UserManager<IdentityUser> users,
     LeaveService leave,
     PhotoStore photos,
+    DocumentStore documentFiles,
     IOptions<DemoOptions> options,
     ILogger<DemoSeeder> logger)
 {
@@ -110,6 +111,9 @@ public class DemoSeeder(
             var photoFiles = await db.Employees.IgnoreQueryFilters().Where(e => orgIds.Contains(e.OrganizationId) && e.PhotoPath != null)
                 .Select(e => e.PhotoPath).ToListAsync(ct);
             photoFiles.ForEach(photos.Delete);
+            (await db.EmployeeDocuments.IgnoreQueryFilters().Where(d => employees.Contains(d.EmployeeId)).Select(d => d.FileName).ToListAsync(ct))
+                .ForEach(documentFiles.Delete);
+            await db.EmployeeDocuments.IgnoreQueryFilters().Where(d => employees.Contains(d.EmployeeId)).ExecuteDeleteAsync(ct);
             await db.EmployeeExperiences.IgnoreQueryFilters().Where(x => employees.Contains(x.EmployeeId)).ExecuteDeleteAsync(ct);
             await db.SalaryRevisions.IgnoreQueryFilters().Where(x => employees.Contains(x.EmployeeId)).ExecuteDeleteAsync(ct);
             await db.Resignations.IgnoreQueryFilters().Where(x => employees.Contains(x.EmployeeId)).ExecuteDeleteAsync(ct);
@@ -233,6 +237,77 @@ public class DemoSeeder(
 
         await SeedLeaveAsync(employees, today, ct);
         await SeedPeopleAsync(employees, today, ct);
+        await SeedOnboardingAsync(employees, today, ct);
+    }
+
+    /// <summary>
+    /// Personal details, IDs, bank accounts, managers, probation and joining documents. Most staff are fully onboarded;
+    /// the newest joiner (E007) is on probation with documents missing and one waiting for HR, and the demo employee's
+    /// previous relieving letter is waiting for verification.
+    /// </summary>
+    private async Task SeedOnboardingAsync(List<Employee> employees, DateOnly today, CancellationToken ct)
+    {
+        string[] cities = ["Kothrud", "Aundh", "Baner", "Hadapsar", "Viman Nagar", "Wakad", "Kharadi", "Pimple Saudagar", "Shivajinagar", "Karve Nagar", "Warje", "Hinjewadi"];
+        var kavita = employees[4];
+        var meera = employees[0];
+        for (var i = 0; i < employees.Count; i++)
+        {
+            var e = employees[i];
+            var newest = i == 6;
+            e.DateOfBirth ??= new DateOnly(1980 + i * 2 % 17, 1 + i % 12, 3 + i * 2);
+            e.CurrentAddress ??= $"{12 + i * 7}, {cities[i]}, Pune 4110{10 + i:00}";
+            e.EmergencyContactName ??= $"{(i % 2 == 0 ? "Spouse" : "Parent")} of {e.FirstName}";
+            e.EmergencyContactPhone ??= $"98220{11000 + i * 37:00000}";
+            e.HighestQualification ??= e.Designation!.Contains("Lecturer") ? "M.Sc. / M.A." : e.Department == "Security" ? "SSC" : "B.Com";
+            if (!newest)
+            {
+                e.Pan ??= $"DEMO{(char)('A' + i)}{1000 + i}Z";
+                e.Aadhaar ??= $"9{i + 1:00000000000}";
+                e.BankAccountHolder ??= e.FullName;
+                e.BankName ??= i % 2 == 0 ? "State Bank of India" : "HDFC Bank";
+                e.BankAccountNumber ??= $"5010{i + 1:0000000}";
+                e.BankIfsc ??= i % 2 == 0 ? "SBIN0001234" : "HDFC0000123";
+                e.ProbationEndsOn = e.DateOfJoining.AddMonths(6).AddDays(-1);
+                e.ConfirmedOn = e.DateOfJoining.AddMonths(6);
+            }
+            else
+            {
+                e.Pan = "DEMOG1006Z";
+                e.Status = EmployeeStatus.OnProbation;
+                e.ProbationEndsOn = e.DateOfJoining.AddMonths(6).AddDays(-1);
+            }
+            e.ReportingManagerId = e.Designation!.Contains("Lecturer") && e != kavita ? kavita.UniqueId
+                : e.Department is "Security" or "Maintenance" or "Administration" or "Computer Science" or "Library" ? meera.UniqueId
+                : null;
+        }
+
+        var reviewed = DateTime.UtcNow.AddDays(-30);
+        void Add(Employee e, DocumentType type, DocumentStatus status, string? note = null)
+        {
+            var name = documentFiles.Save(e.UniqueId,
+                SamplePdf.Create(type.DisplayName(), $"{e.FullName} ({e.EmpCode})", "Sample document for the EMS demo.", "Not a real document."), ".pdf");
+            db.EmployeeDocuments.Add(new EmployeeDocument
+            {
+                EmployeeId = e.UniqueId, Type = type, FileName = name, OriginalName = $"{type.ToString().ToLowerInvariant()}-{e.EmpCode.ToLowerInvariant()}.pdf",
+                ContentType = "application/pdf", SizeBytes = 900, Status = status,
+                ReviewedAt = status == DocumentStatus.Pending ? null : reviewed, ReviewNote = note,
+            });
+        }
+
+        for (var i = 0; i < employees.Count; i++)
+        {
+            var e = employees[i];
+            if (i == 6)
+            {
+                Add(e, DocumentType.PanCard, DocumentStatus.Verified);
+                Add(e, DocumentType.EducationCertificate, DocumentStatus.Pending);
+                Add(e, DocumentType.AadhaarCard, DocumentStatus.Rejected, "The photo is blurred. Please upload a clear scan of both sides.");
+                continue;
+            }
+            foreach (var type in OnboardingChecklist.RequiredDocuments(e))
+                Add(e, type, i == 2 && type == DocumentType.PreviousRelievingLetter ? DocumentStatus.Pending : DocumentStatus.Verified);
+        }
+        await db.SaveChangesAsync(ct);
     }
 
     /// <summary>Leave types and balances; every seeded "On leave" day becomes an approved casual leave.</summary>

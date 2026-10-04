@@ -59,6 +59,14 @@ The app keeps one demo organization, **Greenfield Institute (Demo)**, with 12 em
 - Demo logins cannot open the account pages (change password, email or delete account).
 - Settings: `Demo:Enabled` (turn the demo off), `Demo:Password`, `Demo:TimeZone`.
 
+### Onboarding a new employee
+
+1. **Add employee** (HR or owner): personal details, job (biometric ID, reporting manager, employment type, shift, salary, probation end date), PAN / Aadhaar / bank account, and optionally **Give login access now**. Duplicate email, mobile, PAN or Aadhaar and impossible dates (under 14 at joining, probation ending before joining) are refused. Saving opens the employee's page.
+2. **Joining checklist** on the employee's page and in their own **Me → Joining checklist**: personal details, PAN, Aadhaar, salary account, shift, and the documents to collect — PAN card, Aadhaar card, qualification certificate, cancelled cheque, passport-size photo, signed offer letter, plus the previous employer's relieving letter when they have prior experience. Files (PDF or image, up to 5 MB) are stored privately in `App_Data/documents`.
+3. Documents the employee uploads wait for HR under **Leave & resignations → Joining documents to verify** (verify, or reject with a note). Documents HR uploads are verified at once.
+4. The **Employees** list shows each person's onboarding progress; **Onboarding pending** lists only those with items left.
+5. **Probation**: new employees start *On probation* (6 months by default). **Confirm employment** makes them Active and adds a **confirmation letter** under Letters.
+
 ### Employee self-service
 
 Staff with a login (HR, Accounts, Employee) get a **Me** menu:

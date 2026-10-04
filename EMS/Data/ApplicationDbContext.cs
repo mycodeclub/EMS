@@ -27,6 +27,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<EmployeeExperience> EmployeeExperiences => Set<EmployeeExperience>();
     public DbSet<SalaryRevision> SalaryRevisions => Set<SalaryRevision>();
     public DbSet<Resignation> Resignations => Set<Resignation>();
+    public DbSet<EmployeeDocument> EmployeeDocuments => Set<EmployeeDocument>();
 
     /// <summary>Name of the global soft-delete query filter (lift it with IgnoreQueryFilters([SoftDeleteFilter])).</summary>
     public const string SoftDeleteFilter = "SoftDelete";
@@ -119,6 +120,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             r.HasIndex(x => new { x.EmployeeId, x.EffectiveFrom });
         });
         builder.Entity<Resignation>().HasIndex(x => new { x.EmployeeId, x.Status });
+        builder.Entity<EmployeeDocument>().HasIndex(x => new { x.EmployeeId, x.Type });
+        builder.Entity<EmployeeDocument>().HasIndex(x => x.Status);
         builder.Entity<LeaveApplication>().HasIndex(x => x.Status);
 
         // Hide soft-deleted rows from every query.

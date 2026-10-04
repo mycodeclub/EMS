@@ -51,3 +51,28 @@ public enum EnquiryInterest
 }
 
 public enum EnquiryStatus { New = 1, Contacted, Converted, Closed }
+
+public enum EmploymentType
+{
+    [Display(Name = "Full time")] FullTime = 1,
+    [Display(Name = "Part time")] PartTime,
+    Contract,
+    Intern,
+    Consultant,
+}
+
+/// <summary>Joining documents collected during onboarding.</summary>
+public enum DocumentType
+{
+    [Display(Name = "PAN card")] PanCard = 1,
+    [Display(Name = "Aadhaar card")] AadhaarCard,
+    [Display(Name = "Highest qualification certificate")] EducationCertificate,
+    [Display(Name = "Cancelled cheque or bank passbook")] BankProof,
+    [Display(Name = "Address proof")] AddressProof,
+    [Display(Name = "Relieving letter from previous employer")] PreviousRelievingLetter,
+    [Display(Name = "Signed offer letter")] SignedOfferLetter,
+    [Display(Name = "Passport-size photo")] PassportPhoto,
+    [Display(Name = "Other")] Other,
+}
+
+public enum DocumentStatus { [Display(Name = "Waiting for verification")] Pending = 1, Verified, Rejected }

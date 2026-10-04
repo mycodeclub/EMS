@@ -1,3 +1,6 @@
+using EMS.Data;
+using EMS.Models;
+using Microsoft.EntityFrameworkCore;
 using EMS.Areas.Org.Models;
 using EMS.Models.Common;
 using EMS.Services.Leave;
@@ -7,16 +10,22 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace EMS.Areas.Org.Controllers;
 
-/// <summary>HR's queue: approve or reject leave, accept resignations (fixing the last working day) or reject them.</summary>
+/// <summary>
+/// HR's queue: approve or reject leave, accept resignations (fixing the last working day) or reject them, and verify
+/// joining documents that employees uploaded.
+/// </summary>
 [Authorize(Roles = AppRoles.PeopleManagers)]
-public class RequestsController(OrganizationContext context, LeaveService leave, ResignationService resignations) : OrgController(context)
+public class RequestsController(OrganizationContext context, LeaveService leave, ResignationService resignations, ApplicationDbContext db) : OrgController(context)
 {
     private readonly OrganizationContext context = context;
 
     public async Task<IActionResult> Index(CancellationToken ct) => View(new RequestsPage(
         await leave.PendingAsync(Organization.UniqueId, ct),
         await resignations.OpenAsync(Organization.UniqueId, ct),
-        await leave.RecentDecisionsAsync(Organization.UniqueId, 10, ct)));
+        await leave.RecentDecisionsAsync(Organization.UniqueId, 10, ct),
+        await db.EmployeeDocuments.Include(d => d.Employee)
+            .Where(d => d.Employee.OrganizationId == Organization.UniqueId && d.Status == DocumentStatus.Pending)
+            .OrderBy(d => d.UniqueId).ToListAsync(ct)));
 
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Leave(int id, bool approve, string? remarks, CancellationToken ct)

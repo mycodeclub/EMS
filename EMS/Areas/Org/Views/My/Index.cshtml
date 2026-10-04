@@ -56,6 +56,14 @@ else
         new("Paid days", Model.Pay!.PaidDays.ToString("0.#"), unmarked > 0 ? $"{unmarked} day{(unmarked == 1 ? "" : "s")} not marked yet" : $"of {Model.Pay.EmployedDays}"),
     ];
     <partial name="_OnNotice" model="resignation" />
+    @if (ViewData["Checklist"] is EMS.Services.People.Checklist { IsComplete: false } checklist)
+    {
+        <p class="notice" role="note">
+            <b>Joining checklist: @checklist.Done of @checklist.Total done.</b>
+            Still needed: @string.Join(", ", checklist.Items.Where(i => !i.Done && i.Owner == EMS.Services.People.ChecklistOwner.Employee && i.DocumentStatus != DocumentStatus.Pending).Select(i => i.Label.ToLowerInvariant()).DefaultIfEmpty("nothing from you, HR is finishing up")).
+            <a asp-action="Checklist">Complete it</a>
+        </p>
+    }
     <partial name="_Stats" model="stats" />
     <partial name="_ShiftCard" model="Model.Employee" />
 

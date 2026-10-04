@@ -9,8 +9,9 @@ using Microsoft.EntityFrameworkCore;
 namespace EMS.Areas.Org.Controllers;
 
 /// <summary>
-/// Printable letters (print / save as PDF): offer letter, an appraisal letter for each salary revision, and a relieving
-/// letter once a resignation is accepted. Staff see their own; HR, accounts and the owner can open anyone's.
+/// Printable letters (print / save as PDF): offer letter, an appraisal letter for each salary revision, a confirmation
+/// letter when probation ends, and a relieving letter once a resignation is accepted. Staff see their own; HR, accounts
+/// and the owner can open anyone's.
 /// </summary>
 public class LettersController(OrganizationContext context, ApplicationDbContext db) : OrgController(context)
 {
@@ -38,6 +39,12 @@ public class LettersController(OrganizationContext context, ApplicationDbContext
         if (await db.SalaryRevisions.FirstOrDefaultAsync(r => r.UniqueId == id && r.EmployeeId == employee.UniqueId, ct) is not { } revision) return NotFound();
         ViewData["Revision"] = revision;
         return Letter("Appraisal", employee, employeeId);
+    }
+
+    public async Task<IActionResult> Confirmation(int? employeeId, CancellationToken ct)
+    {
+        if (await ResolveAsync(employeeId, ct) is not { ConfirmedOn: not null } employee) return NotFound();
+        return Letter("Confirmation", employee, employeeId);
     }
 
     public async Task<IActionResult> Relieving(int? employeeId, CancellationToken ct)

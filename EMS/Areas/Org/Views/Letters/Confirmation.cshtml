@@ -1,0 +1,22 @@
+@model Employee
+@{
+    var organization = (Organization)ViewData["Organization"]!;
+    var confirmed = Model.ConfirmedOn!.Value;
+    ViewData["Title"] = $"Confirmation letter {Model.EmpCode}";
+    ViewData["LetterTitle"] = "Confirmation letter";
+    ViewData["LetterDate"] = confirmed.ToString("dd MMMM yyyy");
+}
+<article class="card slip letter">
+    <partial name="_LetterHead" model="Model" />
+    <p><b>Subject: Confirmation of employment</b></p>
+    <p>Dear @Model.FirstName,</p>
+    <p>We are pleased to inform you that you have successfully completed your probation period with @organization.Name. Your employment as <b>@(Model.Designation ?? "staff member")</b>@(Model.Department is null ? "" : $" in the {Model.Department} department") is confirmed with effect from <b>@confirmed.ToString("dd MMMM yyyy")</b>.</p>
+    <dl class="slip-meta">
+        <div><span>Date of joining</span><b>@Model.DateOfJoining.ToShortDate()</b></div>
+        <div><span>Confirmed from</span><b>@confirmed.ToShortDate()</b></div>
+        <div><span>Employment type</span><b>@Model.EmploymentType.DisplayName()</b></div>
+        <div><span>Notice period</span><b>@Model.NoticePeriodDays days</b></div>
+    </dl>
+    <p>All other terms of your employment remain as in your offer letter. We appreciate your contribution and look forward to your continued growth with us.</p>
+    <partial name="_SignOff" />
+</article>

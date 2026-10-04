@@ -24,6 +24,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<LeaveService>();
         services.AddScoped<ResignationService>();
         services.AddSingleton<PhotoStore>();
+        services.AddSingleton<DocumentStore>();
+        services.AddScoped<OnboardingChecklist>();
         return services;
     }
 }

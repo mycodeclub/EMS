@@ -83,7 +83,11 @@ public record MyResignationPage(Employee Employee, Resignation? Current, IReadOn
 public record LettersPage(Employee Employee, IReadOnlyList<SalaryRevision> Revisions, Resignation? Accepted, bool IsSelf);
 
 /// <summary>HR's queue: pending leave, open resignations and recent leave decisions.</summary>
-public record RequestsPage(IReadOnlyList<LeaveApplication> PendingLeave, IReadOnlyList<Resignation> Resignations, IReadOnlyList<LeaveApplication> RecentLeave);
+public record RequestsPage(IReadOnlyList<LeaveApplication> PendingLeave, IReadOnlyList<Resignation> Resignations, IReadOnlyList<LeaveApplication> RecentLeave,
+    IReadOnlyList<EmployeeDocument> DocumentsToVerify);
+
+/// <summary>Self-service joining checklist: what is still needed, and the documents uploaded so far.</summary>
+public record MyChecklistPage(Employee Employee, EMS.Services.People.Checklist Checklist, IReadOnlyList<EmployeeDocument> Documents);
 
 /// <summary>What an employee can change on their own profile. Blank PAN / Aadhaar keep the saved value. PAN and IFSC are accepted in any case and saved in capitals.</summary>
 public class MyProfileInput
@@ -178,38 +182,83 @@ public class EmployeeInput
     [Display(Name = "Date of birth")] public DateOnly? DateOfBirth { get; set; }
     [EmailAddress, StringLength(150)] public string? Email { get; set; }
     [Phone, StringLength(20)] public string? Mobile { get; set; }
+    [StringLength(150), Display(Name = "Highest qualification")] public string? HighestQualification { get; set; }
+    [StringLength(500), Display(Name = "Current address")] public string? CurrentAddress { get; set; }
+    [StringLength(150), Display(Name = "Emergency contact name")] public string? EmergencyContactName { get; set; }
+    [Phone, StringLength(20), Display(Name = "Emergency contact phone")] public string? EmergencyContactPhone { get; set; }
+
     [StringLength(100)] public string? Department { get; set; }
     [StringLength(100)] public string? Designation { get; set; }
+    [Display(Name = "Reporting manager")] public int? ReportingManagerId { get; set; }
+    [Display(Name = "Employment type")] public EmploymentType EmploymentType { get; set; } = EmploymentType.FullTime;
     [Required, Display(Name = "Date of joining")] public DateOnly? DateOfJoining { get; set; }
+    [Display(Name = "Probation ends on")] public DateOnly? ProbationEndsOn { get; set; }
     [Display(Name = "Date of leaving")] public DateOnly? DateOfLeaving { get; set; }
     [Display(Name = "Shift")] public int? ShiftId { get; set; }
+    [StringLength(20), RegularExpression("^[A-Za-z0-9-]*$", ErrorMessage = "Letters, digits and dashes only."), Display(Name = "Biometric ID")]
+    public string? AttendanceId { get; set; }
     [Range(0, 10_000_000), Display(Name = "Monthly salary (₹)")] public decimal? MonthlySalary { get; set; }
     public EmployeeStatus Status { get; set; } = EmployeeStatus.Active;
     [Range(0, 180), Display(Name = "Notice period (days)")] public int NoticePeriodDays { get; set; } = 30;
 
+    // IDs and bank: PAN and Aadhaar are shown masked; leaving them blank keeps what is saved.
+    [StringLength(10), RegularExpression("^[A-Za-z]{5}[0-9]{4}[A-Za-z]$", ErrorMessage = "Enter the PAN as ABCDE1234F."), Display(Name = "PAN")]
+    public string? Pan { get; set; }
+    [StringLength(12), RegularExpression(Patterns.Aadhaar, ErrorMessage = "Enter the 12-digit Aadhaar number."), Display(Name = "Aadhaar")]
+    public string? Aadhaar { get; set; }
+    [StringLength(150), Display(Name = "Account holder name")] public string? BankAccountHolder { get; set; }
+    [StringLength(150), Display(Name = "Bank name")] public string? BankName { get; set; }
+    [StringLength(20), RegularExpression("^[0-9]{9,18}$", ErrorMessage = "Enter 9 to 18 digits."), Display(Name = "Account number")]
+    public string? BankAccountNumber { get; set; }
+    [StringLength(11), RegularExpression("^[A-Za-z]{4}0[A-Za-z0-9]{6}$", ErrorMessage = "Enter the IFSC as SBIN0001234."), Display(Name = "IFSC")]
+    public string? BankIfsc { get; set; }
+
+    // New employees only: create their login in the same step.
+    [Display(Name = "Give login access now")] public bool CreateLogin { get; set; }
+    public string LoginRole { get; set; } = AppRoles.Employee;
+
     public static EmployeeInput From(Employee e) => new()
     {
         Id = e.UniqueId, EmpCode = e.EmpCode, FirstName = e.FirstName, LastName = e.LastName, Gender = e.Gender,
-        DateOfBirth = e.DateOfBirth, Email = e.Email, Mobile = e.Mobile, Department = e.Department, Designation = e.Designation,
-        DateOfJoining = e.DateOfJoining, DateOfLeaving = e.DateOfLeaving, ShiftId = e.ShiftId, MonthlySalary = e.MonthlySalary, Status = e.Status,
-        NoticePeriodDays = e.NoticePeriodDays,
+        DateOfBirth = e.DateOfBirth, Email = e.Email, Mobile = e.Mobile, HighestQualification = e.HighestQualification,
+        CurrentAddress = e.CurrentAddress, EmergencyContactName = e.EmergencyContactName, EmergencyContactPhone = e.EmergencyContactPhone,
+        Department = e.Department, Designation = e.Designation, ReportingManagerId = e.ReportingManagerId, EmploymentType = e.EmploymentType,
+        DateOfJoining = e.DateOfJoining, ProbationEndsOn = e.ProbationEndsOn, DateOfLeaving = e.DateOfLeaving, ShiftId = e.ShiftId,
+        AttendanceId = e.AttendanceId, MonthlySalary = e.MonthlySalary, Status = e.Status, NoticePeriodDays = e.NoticePeriodDays,
+        BankAccountHolder = e.BankAccountHolder, BankName = e.BankName, BankAccountNumber = e.BankAccountNumber, BankIfsc = e.BankIfsc,
     };
 
     public void ApplyTo(Employee e)
     {
+        static string? Clean(string? v) => string.IsNullOrWhiteSpace(v) ? null : v.Trim();
         e.FirstName = FirstName.Trim();
-        e.LastName = LastName?.Trim();
+        e.LastName = Clean(LastName);
         e.Gender = Gender;
         e.DateOfBirth = DateOfBirth;
-        e.Email = Email?.Trim();
-        e.Mobile = Mobile?.Trim();
-        e.Department = Department?.Trim();
-        e.Designation = Designation?.Trim();
+        e.Email = Clean(Email);
+        e.Mobile = Clean(Mobile);
+        e.HighestQualification = Clean(HighestQualification);
+        e.CurrentAddress = Clean(CurrentAddress);
+        e.EmergencyContactName = Clean(EmergencyContactName);
+        e.EmergencyContactPhone = Clean(EmergencyContactPhone);
+        e.Department = Clean(Department);
+        e.Designation = Clean(Designation);
+        e.ReportingManagerId = ReportingManagerId;
+        e.EmploymentType = EmploymentType;
         e.DateOfJoining = DateOfJoining!.Value;
+        e.ProbationEndsOn = ProbationEndsOn;
         e.DateOfLeaving = DateOfLeaving;
         e.ShiftId = ShiftId;
+        // Blank keeps the current ID (a new employee gets their employee code).
+        if (Clean(AttendanceId) is { } biometric) e.AttendanceId = biometric.ToUpperInvariant();
         e.MonthlySalary = MonthlySalary;
         e.Status = Status;
         e.NoticePeriodDays = NoticePeriodDays;
+        if (Clean(Pan) is { } pan) e.Pan = pan.ToUpperInvariant();
+        if (Clean(Aadhaar) is { } aadhaar) e.Aadhaar = aadhaar;
+        e.BankAccountHolder = Clean(BankAccountHolder);
+        e.BankName = Clean(BankName);
+        e.BankAccountNumber = Clean(BankAccountNumber);
+        e.BankIfsc = Clean(BankIfsc)?.ToUpperInvariant();
     }
 }
