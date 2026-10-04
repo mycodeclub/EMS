@@ -1,7 +1,7 @@
 name: Deploy to production
 
 # Every merge into `release` (the branch only accepts pull requests) builds and publishes EMS, applies database
-# migrations to the live database, then uploads the site to the site4now (SmarterASP) IIS site over FTPS.
+# migrations to the live database, then uploads the site to the site4now (SmarterASP) IIS site over FTPS with lftp.
 # Settings live in the `production` environment on GitHub:
 #   secrets:   CONNECTION_STRING, FTP_USERNAME, FTP_PASSWORD, SUPERADMIN_PASSWORD
 #   variables: FTP_SERVER, FTP_REMOTE_DIR (site folder, ending in /), FTP_PROTOCOL (ftps or ftp; default ftps),
@@ -93,19 +93,26 @@ jobs:
           curl -sS "${ssl[@]}" --user "$FTP_USERNAME:$FTP_PASSWORD" "ftp://$FTP_SERVER/" -Q "DELE ${FTP_REMOTE_DIR#/}index.html" -o /dev/null || true
           sleep 5
 
-      # App_Data on the server holds uploaded photos and documents and the sign-in keys: never overwrite it.
+      # lftp mirrors the build over FTPS, uploading only new or changed files. (SamKirkland/FTP-Deploy-Action's FTP library
+      # loses its data connection with this host, so it is not used.) App_Data on the server holds uploaded photos and
+      # documents and the sign-in keys: it is never touched.
       - name: Upload
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ vars.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ${{ vars.FTP_PROTOCOL || 'ftps' }}
-          local-dir: ./publish/
-          server-dir: ${{ vars.FTP_REMOTE_DIR }}
-          exclude: |
-            logs/**
-            App_Data/**
+        env:
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_SERVER: ${{ vars.FTP_SERVER }}
+          FTP_REMOTE_DIR: ${{ vars.FTP_REMOTE_DIR }}
+          FTP_PROTOCOL: ${{ vars.FTP_PROTOCOL || 'ftps' }}
+        run: |
+          sudo apt-get install -y -qq lftp > /dev/null
+          ssl="set ftp:ssl-allow no;"
+          [ "$FTP_PROTOCOL" = "ftps" ] && ssl="set ftp:ssl-force true; set ftp:ssl-protect-data true;"
+          remote="/${FTP_REMOTE_DIR#/}"
+          lftp -u "$FTP_USERNAME,$FTP_PASSWORD" "$FTP_SERVER" -e "
+            $ssl
+            set net:max-retries 5; set net:reconnect-interval-base 5; set net:timeout 60;
+            mirror --reverse --only-newer --parallel=4 --verbose=1 --exclude-glob App_Data/ --exclude-glob logs/ ./publish/ $remote;
+            bye"
 
       - name: Bring the site back online
         if: always()
