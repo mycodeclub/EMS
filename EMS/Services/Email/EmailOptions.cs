@@ -12,8 +12,13 @@ public class EmailOptions
     public string FromName { get; set; } = "EMS";
 
     public string? SmtpHost { get; set; }
+
+    /// <summary>587 (STARTTLS) or 465 (SSL from the start); 25 for plain relays.</summary>
     public int SmtpPort { get; set; } = 587;
+
+    /// <summary>Encrypt the connection: SSL on port 465, STARTTLS on other ports.</summary>
     public bool EnableSsl { get; set; } = true;
+
     public string? UserName { get; set; }
     public string? Password { get; set; }
 

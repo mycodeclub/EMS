@@ -11,6 +11,11 @@
     <UserSecretsId>aspnet-EMS-bf46babe-56fa-466e-922e-71eca7dd5ed4</UserSecretsId>
   </PropertyGroup>
 
+  <!-- Lets IIS serve Let's Encrypt challenge files (the hosting panel's free SSL) instead of passing them to EMS. -->
+  <ItemGroup>
+    <None Include="Deploy/acme-challenge.web.config" Link=".well-known/acme-challenge/web.config" CopyToPublishDirectory="PreserveNewest" CopyToOutputDirectory="Never" />
+  </ItemGroup>
+
   <!-- Local-only files: never shipped to the server. -->
   <ItemGroup>
     <Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" />
@@ -20,6 +25,7 @@
 
   <ItemGroup>
     <PackageReference Include="ClosedXML" Version="0.105.1" />
+    <PackageReference Include="MailKit" Version="4.18.1" />
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="10.0.12" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.12" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="10.0.12" />

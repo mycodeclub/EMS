@@ -41,21 +41,22 @@ On startup the app creates the `SuperAdmin` and `OrgAdmin` roles and the super a
 ## Development login
 
 | Role        | Email                  | Password          |
-|-------------|------------------------|-------------------|
+| ----------- | ---------------------- | ----------------- |
 | Super admin | `superadmin@ems.local` | `SuperAdmin#2026` |
+
 
 ### Public demo logins
 
 The app keeps one demo organization, **Greenfield Institute (Demo)**, with 12 employees on three shifts (General 09:00–17:30, Early 07:00–15:00, Night 22:00–06:00) and attendance from the 1st of the month three months back until yesterday. These logins are listed on the sign-in page, where each one signs in with one click:
 
-| Role | Email | Password | Sees |
-|------|-------|----------|------|
-| Admin (owner) | `admin@greenfield.test` | `Demo@1234` | Every page of the organization panel |
-| HR | `hr@greenfield.test` | `Demo@1234` | Dashboard, employees, attendance, punch in / out, shifts, import, own attendance & slips |
-| Accounts | `accounts@greenfield.test` | `Demo@1234` | Dashboard, salary slips, own attendance & slips |
-| Employee | `employee@greenfield.test` | `Demo@1234` | Own attendance, shift, leave, profile, letters, resignation |
+| Role          | Email                      | Password    | Sees                                                                                     |
+| ------------- | -------------------------- | ----------- | ---------------------------------------------------------------------------------------- |
+| Admin (owner) | `admin@greenfield.test`    | `Demo@1234` | Every page of the organization panel                                                     |
+| HR            | `hr@greenfield.test`       | `Demo@1234` | Dashboard, employees, attendance, punch in / out, shifts, import, own attendance & slips |
+| Accounts      | `accounts@greenfield.test` | `Demo@1234` | Dashboard, salary slips, own attendance & slips                                          |
+| Employee      | `employee@greenfield.test` | `Demo@1234` | Own attendance, shift, leave, profile, letters, resignation                              |
 
-- The demo is rebuilt at midnight (`Demo:TimeZone`, default `Asia/Kolkata`), and on startup if it was last built before today. Only the demo organization and these four logins are deleted and recreated; real customers are never touched. The super admin can also click **Reset demo now** on *Customers & trials*.
+- The demo is rebuilt at midnight (`Demo:TimeZone`, default `Asia/Kolkata`), and on startup if it was last built before today. Only the demo organization and these four logins are deleted and recreated; real customers are never touched. The super admin can also click **Reset demo now** on _Customers & trials_.
 - Demo logins cannot open the account pages (change password, email or delete account).
 - Settings: `Demo:Enabled` (turn the demo off), `Demo:Password`, `Demo:TimeZone`.
 
@@ -65,7 +66,7 @@ The app keeps one demo organization, **Greenfield Institute (Demo)**, with 12 em
 2. **Joining checklist** on the employee's page and in their own **Me → Joining checklist**: personal details, PAN, Aadhaar, salary account, shift, and the documents to collect — PAN card, Aadhaar card, qualification certificate, cancelled cheque, passport-size photo, signed offer letter, plus the previous employer's relieving letter when they have prior experience. Files (PDF or image, up to 5 MB) are stored privately in `App_Data/documents`.
 3. Documents the employee uploads wait for HR under **Leave & resignations → Joining documents to verify** (verify, or reject with a note). Documents HR uploads are verified at once.
 4. The **Employees** list shows each person's onboarding progress; **Onboarding pending** lists only those with items left.
-5. **Probation**: new employees start *On probation* (6 months by default). **Confirm employment** makes them Active and adds a **confirmation letter** under Letters.
+5. **Probation**: new employees start _On probation_ (6 months by default). **Confirm employment** makes them Active and adds a **confirmation letter** under Letters.
 
 ### Employee self-service
 
@@ -75,10 +76,10 @@ Staff with a login (HR, Accounts, Employee) get a **Me** menu:
 - **Leave**: balances (casual 12, sick 8, earned 15 a year by default, pro-rated for joiners), apply (half day allowed, up to 30 days back), cancel while pending. Sundays and holidays are not counted.
 - **My profile**: photo (JPEG / PNG / WebP up to 2 MB, stored in `App_Data/photos`), personal details, address, emergency contact, previous jobs (adds up the prior experience), PAN and Aadhaar (shown masked), salary bank account.
 - **Letters**: offer letter, an appraisal letter for each salary revision, and a relieving letter once a resignation is accepted. Print or save as PDF.
-- **Resignation**: shows the notice period, submit with the last day asked for, withdraw until HR accepts. Once accepted the employee is *On notice* and sees the countdown to the last working day.
+- **Resignation**: shows the notice period, submit with the last day asked for, withdraw until HR accepts. Once accepted the employee is _On notice_ and sees the countdown to the last working day.
 - **Account & password** (everyone, owner too): change the sign-in email and password. Locked for the shared demo logins and while a super admin views a customer.
 
-HR and the owner approve leave and accept or reject resignations under **Leave & resignations**. Approved leave marks the days *On leave* in attendance and uses the balance. Accepting a resignation sets the last working day (the leaving date) and the *On notice* status. Salary revisions are recorded on the employee's page and produce the appraisal letter; the notice period is set there too.
+HR and the owner approve leave and accept or reject resignations under **Leave & resignations**. Approved leave marks the days _On leave_ in attendance and uses the balance. Accepting a resignation sets the last working day (the leaving date) and the _On notice_ status. Salary revisions are recorded on the employee's page and produce the appraisal letter; the notice period is set there too.
 
 ### Sign in as a customer
 
@@ -92,7 +93,7 @@ Anyone can register a normal account from the Register page. It has no admin acc
 
 ## Try the customer flow
 
-1. As super admin, open **Enquiries** and click **Offer free trial** on an enquiry (or **Offer a free trial** for a new customer). This creates the organization, a *Head office* branch and the owner's login with a temporary password, and emails the owner.
+1. As super admin, open **Enquiries** and click **Offer free trial** on an enquiry (or **Offer a free trial** for a new customer). This creates the organization, a _Head office_ branch and the owner's login with a temporary password, and emails the owner.
 2. Without an SMTP server, the email is saved as an `.eml` file in `EMS/App_Data/mail` (open it in Outlook, Thunderbird or a text editor). The confirmation page also shows the email and the temporary password once.
 3. Sign in as the owner with that email and password. The setup wizard asks them to:
    1. choose their own password,
@@ -112,31 +113,31 @@ Salary slips do not apply statutory deductions (PF, ESI, professional tax, TDS) 
   - Night shifts: attendance belongs to the day the shift starts; an out time earlier than the in time is the next morning.
 - **Import** (`/Org/Import`): employees and attendance from `.csv` or `.xlsx` (up to 5 MB / 20,000 rows). Templates download as Excel or CSV, blank or with sample rows; the Excel template has an Instructions sheet and drop-downs for status, gender and your shift codes. Every row is validated first and nothing is saved if any row has a problem.
   - Employees: new rows are added (blank codes numbered automatically); existing codes are skipped unless "Update existing employees" is ticked, in which case blank cells keep the current value.
-  - Attendance: one row per employee per day, with an in time, a status, or both. Days already marked are skipped unless "Replace days already marked" is ticked. A *Biometric ID* column can be used instead of *Employee code* for device exports.
+  - Attendance: one row per employee per day, with an in time, a status, or both. Days already marked are skipped unless "Replace days already marked" is ticked. A _Biometric ID_ column can be used instead of _Employee code_ for device exports.
   - Dates are read day first (05-09-2026 is 5 September); `2026-09-05` and Excel date cells also work.
 
 ## Everyday commands
 
 Run these from the `EMS` folder.
 
-| Task | Command |
-|------|---------|
-| Add a migration after changing a model | `dotnet ef migrations add <Name> -o Data/Migrations` |
-| Apply migrations | `dotnet ef database update` |
-| Check for model changes without a migration | `dotnet ef migrations has-pending-model-changes` |
-| Open a SQL prompt | `docker exec -it ems-postgres psql -U ems -d ems` |
-| Wipe the database and start over | `docker compose down -v`, `docker compose up -d`, then `dotnet ef database update` |
+| Task                                        | Command                                                                            |
+| ------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Add a migration after changing a model      | `dotnet ef migrations add <Name> -o Data/Migrations`                               |
+| Apply migrations                            | `dotnet ef database update`                                                        |
+| Check for model changes without a migration | `dotnet ef migrations has-pending-model-changes`                                   |
+| Open a SQL prompt                           | `docker exec -it ems-postgres psql -U ems -d ems`                                  |
+| Wipe the database and start over            | `docker compose down -v`, `docker compose up -d`, then `dotnet ef database update` |
 
 Table and column names are case-sensitive in PostgreSQL, so quote them: `select * from "Enquiries";`
 
 ## Configuration
 
-| Setting | Where | Purpose |
-|---------|-------|---------|
-| `ConnectionStrings:DefaultConnection` | `appsettings.json` | PostgreSQL connection |
-| `SuperAdmin:Email` / `SuperAdmin:Password` | `appsettings.json` / `appsettings.Development.json` | Account seeded at startup |
-| `Company` | `appsettings.json` | Company details shown on the landing page |
-| `Email:SmtpHost`, `SmtpPort`, `UserName`, `Password`, `FromAddress` | `appsettings.json` / environment | Outgoing mail. With no `SmtpHost`, mail is saved to `Email:PickupDirectory` (default `App_Data/mail`) |
+| Setting                                                             | Where                                               | Purpose                                                                                               |
+| ------------------------------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `ConnectionStrings:DefaultConnection`                               | `appsettings.json`                                  | PostgreSQL connection                                                                                 |
+| `SuperAdmin:Email` / `SuperAdmin:Password`                          | `appsettings.json` / `appsettings.Development.json` | Account seeded at startup                                                                             |
+| `Company`                                                           | `appsettings.json`                                  | Company details shown on the landing page                                                             |
+| `Email:SmtpHost`, `SmtpPort`, `UserName`, `Password`, `FromAddress` | `appsettings.json` / environment                    | Outgoing mail. With no `SmtpHost`, mail is saved to `Email:PickupDirectory` (default `App_Data/mail`) |
 
 ## Troubleshooting
 
@@ -159,14 +160,18 @@ Production is the site4now (SmarterASP) IIS site in the FTP folder `ems/`, with 
 
 Settings are in GitHub → **Settings → Environments → production**:
 
-| Kind | Name | Value |
-|------|------|-------|
-| Secret | `CONNECTION_STRING` | Live database connection string |
-| Secret | `FTP_USERNAME`, `FTP_PASSWORD` | site4now FTP login |
-| Secret | `SUPERADMIN_PASSWORD` | Password of the super admin, used only when the account is first created |
-| Variable | `FTP_SERVER` | `win8117.site4now.net` |
-| Variable | `FTP_REMOTE_DIR` | `ems/` |
-| Variable | `FTP_PROTOCOL` | `ftps` |
-| Variable | `SUPERADMIN_EMAIL` | Super admin sign-in email (default `superadmin@ems.local`) |
+| Kind     | Name                           | Value                                                                    |
+| -------- | ------------------------------ | ------------------------------------------------------------------------ |
+| Secret   | `CONNECTION_STRING`            | Live database connection string                                          |
+| Secret   | `FTP_USERNAME`, `FTP_PASSWORD` | site4now FTP login                                                       |
+| Secret   | `SUPERADMIN_PASSWORD`          | Password of the super admin, used only when the account is first created |
+| Variable | `FTP_SERVER`                   | `win8117.site4now.net`                                                   |
+| Variable | `FTP_REMOTE_DIR`               | `ems/`                                                                   |
+| Variable | `FTP_PROTOCOL`                 | `ftps`                                                                   |
+| Variable | `SUPERADMIN_EMAIL`             | Super admin sign-in email (default `superadmin@ems.local`)               |
+| Variable | `EMAIL_SMTP_HOST` | Outgoing mail server. Leave unset to save mail to `App_Data/mail` instead of sending |
+| Variable | `EMAIL_SMTP_PORT`, `EMAIL_ENABLE_SSL` | `587` with STARTTLS or `465` with SSL; `true` (default) |
+| Variable | `EMAIL_USERNAME`, `EMAIL_FROM_ADDRESS`, `EMAIL_FROM_NAME` | Mailbox login (e.g. `ems@bitprosofttech.com`), sender address and name |
+| Secret | `EMAIL_PASSWORD` | Mailbox password |
 
 On first start the app creates the roles, the super admin and the public demo organization, and rebuilds the demo every midnight (India time). Dates such as "today" follow `App:TimeZone` (default `Asia/Kolkata`), not the server's clock. Never put a production connection string or password in the repository.
