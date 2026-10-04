@@ -174,4 +174,12 @@ Settings are in GitHub → **Settings → Environments → production**:
 | Variable | `EMAIL_USERNAME`, `EMAIL_FROM_ADDRESS`, `EMAIL_FROM_NAME` | Mailbox login (e.g. `ems@bitprosofttech.com`), sender address and name |
 | Secret | `EMAIL_PASSWORD` | Mailbox password |
 
+### HTTPS certificate
+
+The panel's free SSL did not issue, so the Let's Encrypt certificate is obtained from a Mac and imported:
+
+1. `brew install certbot`, then run `scripts/ssl-certificate.sh` and enter the FTP login. It proves ownership by uploading the challenge file over FTPS (IIS serves `.well-known/acme-challenge/` itself, see `EMS/Deploy/acme-challenge.web.config`).
+2. In the site4now panel, open **SSL → Import SSL** for `ems.bitprosofttech.com` and upload the `.pfx` from `~/.ems-ssl` with the password the script prints.
+3. Certificates last 90 days: run the script and import again about every 60 days.
+
 On first start the app creates the roles, the super admin and the public demo organization, and rebuilds the demo every midnight (India time). Dates such as "today" follow `App:TimeZone` (default `Asia/Kolkata`), not the server's clock. Never put a production connection string or password in the repository.
