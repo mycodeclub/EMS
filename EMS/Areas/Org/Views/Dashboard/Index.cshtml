@@ -1,5 +1,6 @@
 @model OrgDashboard
 @{
+    var showPayroll = AppRoles.PayrollManagers.Split(',').Any(User.IsInRole);
     ViewData["Title"] = "Dashboard";
     var welcome = TempData["Welcome"] is string;
     List<EMS.Models.Admin.StatTile> stats =
@@ -46,7 +47,7 @@ else
         <partial name="Charts/_Bars" model="Model.ByShift" />
     </div>
 
-    <div class="grid-3-1">
+    <div class="@(showPayroll ? "grid-3-1" : null)">
         <section class="card">
             <div class="card-head">
                 <h2>Newest employees</h2>
@@ -69,6 +70,9 @@ else
                 </table>
             </div>
         </section>
+        @* Salaries are for the owner and accounts only. *@
+        @if (showPayroll)
+        {
         <section class="card">
             <div class="card-head"><h2>Payroll this month</h2></div>
             <div class="card-body">
@@ -77,5 +81,6 @@ else
                 <p style="margin-top:14px"><a class="btn btn-secondary btn-sm" asp-controller="Payroll" asp-action="Index">Salary slips</a></p>
             </div>
         </section>
+        }
     </div>
 }

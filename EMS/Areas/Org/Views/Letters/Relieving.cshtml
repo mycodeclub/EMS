@@ -1,0 +1,24 @@
+@model Employee
+@{
+    var organization = (Organization)ViewData["Organization"]!;
+    var resignation = (Resignation)ViewData["Resignation"]!;
+    var last = resignation.LastWorkingDay!.Value;
+    ViewData["Title"] = $"Relieving letter {Model.EmpCode}";
+    ViewData["LetterTitle"] = "Relieving letter";
+    ViewData["LetterDate"] = (resignation.ActionedAt ?? resignation.SubmittedAt).ToLocalTime().ToString("dd MMMM yyyy");
+}
+<article class="card slip letter">
+    <partial name="_LetterHead" model="Model" />
+    <p><b>Subject: Acceptance of resignation and relieving</b></p>
+    <p>Dear @Model.FirstName,</p>
+    <p>This refers to your resignation dated @resignation.SubmittedAt.ToLocalTime().ToString("dd MMMM yyyy"). Your resignation has been accepted, and you will be relieved from the services of @organization.Name at the close of business on <b>@last.ToString("dddd, dd MMMM yyyy")</b>.</p>
+    <dl class="slip-meta">
+        <div><span>Designation</span><b>@(Model.Designation ?? "—")</b></div>
+        <div><span>Department</span><b>@(Model.Department ?? "—")</b></div>
+        <div><span>Date of joining</span><b>@Model.DateOfJoining.ToShortDate()</b></div>
+        <div><span>Last working day</span><b>@last.ToShortDate()</b></div>
+    </dl>
+    <p>Please hand over your responsibilities and any organization property before your last working day. Your full and final settlement will be processed as per policy.</p>
+    <p>We thank you for your contribution and wish you the very best for the future.</p>
+    <partial name="_SignOff" />
+</article>

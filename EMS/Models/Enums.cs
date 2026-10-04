@@ -6,9 +6,18 @@ public enum ContactRole { Primary = 1, Secondary, HelpDesk, Director, Manager, H
 
 public enum Gender { Male = 1, Female, Other }
 
-public enum EmployeeStatus { Active = 1, OnProbation, OnNotice, Resigned, Terminated }
+public enum EmployeeStatus
+{
+    Active = 1,
+    [Display(Name = "On probation")] OnProbation,
+    [Display(Name = "On notice")] OnNotice,
+    Resigned,
+    Terminated,
+}
 
 public enum LeaveStatus { Pending = 1, Approved, Rejected, Cancelled }
+
+public enum ResignationStatus { Pending = 1, Accepted, Rejected, Withdrawn }
 
 public enum AttendanceStatus { Present = 1, Absent, HalfDay, OnLeave, Holiday, WeeklyOff }
 

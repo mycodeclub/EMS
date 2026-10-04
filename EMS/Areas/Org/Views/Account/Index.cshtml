@@ -1,0 +1,51 @@
+@{
+    ViewData["Title"] = "Account";
+    var locked = ViewData["Locked"] as string;
+}
+
+<header class="page-head">
+    <div>
+        <h1>Account</h1>
+        <p>You sign in as <b>@ViewData["Email"]</b>.</p>
+    </div>
+    <form method="post" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Content("~/")" class="page-actions">
+        @if (!User.IsImpersonated())
+        {
+            <button type="submit" class="btn btn-secondary">Sign out</button>
+        }
+    </form>
+</header>
+
+@if (locked is not null)
+{
+    <p class="notice notice-warn" role="note">@locked</p>
+}
+
+<div class="grid-2">
+    <section class="card form-card">
+        <h2 class="form-section" style="margin-top:0">Change password</h2>
+        <form method="post" asp-action="Password">
+            <fieldset disabled="@(locked is not null)" style="border:0;padding:0;margin:0">
+                <div class="form-grid" style="grid-template-columns:1fr">
+                    <div class="field"><label for="Password_CurrentPassword">Current password</label><input id="Password_CurrentPassword" name="Password.CurrentPassword" type="password" autocomplete="current-password" required /></div>
+                    <div class="field"><label for="Password_NewPassword">New password</label><input id="Password_NewPassword" name="Password.NewPassword" type="password" autocomplete="new-password" minlength="8" required /><span class="hint">At least 8 characters with an upper-case letter, a digit and a symbol.</span></div>
+                    <div class="field"><label for="Password_ConfirmPassword">Confirm new password</label><input id="Password_ConfirmPassword" name="Password.ConfirmPassword" type="password" autocomplete="new-password" required /></div>
+                </div>
+                <div class="form-actions"><button type="submit" class="btn">Change password</button></div>
+            </fieldset>
+        </form>
+    </section>
+
+    <section class="card form-card">
+        <h2 class="form-section" style="margin-top:0">Change sign-in email</h2>
+        <form method="post" asp-action="Email">
+            <fieldset disabled="@(locked is not null)" style="border:0;padding:0;margin:0">
+                <div class="form-grid" style="grid-template-columns:1fr">
+                    <div class="field"><label for="Email_NewEmail">New sign-in email</label><input id="Email_NewEmail" name="Email.NewEmail" type="email" autocomplete="email" required /></div>
+                    <div class="field"><label for="Email_CurrentPassword">Current password</label><input id="Email_CurrentPassword" name="Email.CurrentPassword" type="password" autocomplete="current-password" required /><span class="hint">To confirm it's you.</span></div>
+                </div>
+                <div class="form-actions"><button type="submit" class="btn">Change email</button></div>
+            </fieldset>
+        </form>
+    </section>
+</div>

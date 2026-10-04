@@ -1,0 +1,91 @@
+@model MyResignationPage
+@{
+    ViewData["Title"] = "Resignation";
+    var current = Model.Current;
+    var today = DateOnly.FromDateTime(DateTime.Today);
+    var noticeEnds = today.AddDays(Model.Employee.NoticePeriodDays);
+}
+
+<header class="page-head">
+    <div>
+        <h1>Resignation</h1>
+        <p>Your notice period is <b>@Model.Employee.NoticePeriodDays days</b>. HR confirms your last working day when they accept your resignation.</p>
+    </div>
+</header>
+
+<partial name="_OnNotice" model="current" />
+
+@if (current is { Status: ResignationStatus.Accepted, LastWorkingDay: { } last })
+{
+    var left = Math.Max(0, last.DayNumber - today.DayNumber);
+    List<EMS.Models.Admin.StatTile> stats =
+    [
+        new("Status", "On notice", $"Accepted {current.ActionedAt?.ToLocalTime().ToShortDate()}"),
+        new("Last working day", last.ToString("dd MMM"), last.ToString("dddd, yyyy")),
+        new("Days to go", left.ToString(), left == 0 ? "Last day reached" : "Including today"),
+        new("Resigned on", current.SubmittedAt.ToLocalTime().ToString("dd MMM"), $"Asked for {current.RequestedLastDay:dd MMM}"),
+    ];
+    <partial name="_Stats" model="stats" />
+    <section class="card card-body">
+        <p>@(current.Remarks is null ? "HR accepted your resignation." : $"HR: {current.Remarks}")
+           Your relieving letter is under <a asp-controller="Letters" asp-action="Index">Letters</a>. To withdraw now, talk to HR.</p>
+    </section>
+}
+else if (current is { Status: ResignationStatus.Pending })
+{
+    <section class="card">
+        <div class="card-head"><h2>Waiting for HR</h2><span>Submitted @current.SubmittedAt.ToLocalTime().ToShortDate()</span></div>
+        <div class="card-body">
+            <dl class="slip-meta" style="margin-top:0">
+                <div><span>Last day asked for</span><b>@current.RequestedLastDay.ToShortDate()</b></div>
+                <div><span>End of notice period</span><b>@current.SubmittedAt.ToLocalTime().AddDays(Model.Employee.NoticePeriodDays).ToShortDate()</b></div>
+            </dl>
+            <p class="muted">@current.Reason</p>
+            <form method="post" asp-action="WithdrawResignation" asp-route-id="@current.UniqueId" class="form-actions">
+                <button type="submit" class="btn btn-secondary">Withdraw resignation</button>
+            </form>
+        </div>
+    </section>
+}
+else
+{
+    <section class="card form-card" style="max-width:720px">
+        <h2 class="form-section" style="margin-top:0">Submit your resignation</h2>
+        <form method="post" asp-action="Resignation" novalidate>
+            <div asp-validation-summary="All" class="alert alert-error"></div>
+            <div class="form-grid">
+                <div class="field">
+                    <label asp-for="Input.RequestedLastDay"></label>
+                    <input asp-for="Input.RequestedLastDay" type="date" min="@today.ToString("yyyy-MM-dd")" />
+                    <span class="hint">Your full notice ends on @noticeEnds.ToShortDate(). An earlier day needs HR's agreement.</span>
+                </div>
+                <div class="field span-2">
+                    <label asp-for="Input.Reason"></label>
+                    <textarea asp-for="Input.Reason" rows="4" maxlength="1000" placeholder="e.g. Moving to another city"></textarea>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn">Submit resignation</button>
+                <span class="hint" style="font-size:12px;color:var(--muted)">You can withdraw it until HR accepts it.</span>
+            </div>
+        </form>
+    </section>
+}
+
+@if (Model.History.Any(r => r.UniqueId != current?.UniqueId))
+{
+    <section class="card">
+        <div class="card-head"><h2>Earlier</h2></div>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Submitted</th><th>Asked for</th><th>Status</th></tr></thead>
+                <tbody>
+                    @foreach (var r in Model.History.Where(r => r.UniqueId != current?.UniqueId))
+                    {
+                        <tr><td>@r.SubmittedAt.ToLocalTime().ToShortDate()</td><td>@r.RequestedLastDay.ToShortDate()</td><td><span class="badge">@r.Status</span><small>@r.Remarks</small></td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+}

@@ -2,6 +2,7 @@
 @using EMS.Services.Timekeeping
 @{
     ViewData["Title"] = "My attendance";
+    var resignation = ViewData["Resignation"] as Resignation;
     var records = Model.Days.Where(d => d.Record is not null).Select(d => d.Record!).ToList();
     int Count(params AttendanceStatus[] statuses) => records.Count(r => statuses.Contains(r.Status));
     string Badge(AttendanceStatus status) => status switch
@@ -54,7 +55,9 @@ else
         new("Absent", Count(AttendanceStatus.Absent).ToString(), $"{Count(AttendanceStatus.OnLeave)} on leave"),
         new("Paid days", Model.Pay!.PaidDays.ToString("0.#"), unmarked > 0 ? $"{unmarked} day{(unmarked == 1 ? "" : "s")} not marked yet" : $"of {Model.Pay.EmployedDays}"),
     ];
+    <partial name="_OnNotice" model="resignation" />
     <partial name="_Stats" model="stats" />
+    <partial name="_ShiftCard" model="Model.Employee" />
 
     <section class="card">
         <div class="card-head">

@@ -61,6 +61,22 @@ public class Employee : AuditableEntity
 
     public EmployeeStatus Status { get; set; } = EmployeeStatus.Active;
 
+    /// <summary>Days of notice the employee must serve after resigning.</summary>
+    [Range(0, 180), Display(Name = "Notice period (days)")]
+    public int NoticePeriodDays { get; set; } = 30;
+
+    [StringLength(500), Display(Name = "Current address")] public string? CurrentAddress { get; set; }
+    [StringLength(150), Display(Name = "Emergency contact")] public string? EmergencyContactName { get; set; }
+    [Phone, StringLength(20), Display(Name = "Emergency contact phone")] public string? EmergencyContactPhone { get; set; }
+
+    // Salary account.
+    [StringLength(150), Display(Name = "Account holder name")] public string? BankAccountHolder { get; set; }
+    [StringLength(150), Display(Name = "Bank name")] public string? BankName { get; set; }
+    [StringLength(20), RegularExpression("^[0-9]{9,18}$", ErrorMessage = "Enter 9 to 18 digits."), Display(Name = "Account number")]
+    public string? BankAccountNumber { get; set; }
+    [StringLength(11), RegularExpression(Patterns.Ifsc, ErrorMessage = "Invalid IFSC, e.g. SBIN0001234."), Display(Name = "IFSC")]
+    public string? BankIfsc { get; set; }
+
     /// <summary>Gross monthly salary in rupees; salary slips pro-rate it by paid days.</summary>
     [Range(0, 10_000_000), Display(Name = "Monthly salary")]
     public decimal? MonthlySalary { get; set; }
@@ -80,4 +96,7 @@ public class Employee : AuditableEntity
     public ICollection<LeaveApplication> LeaveApplications { get; set; } = [];
     public ICollection<Attendance> Attendances { get; set; } = [];
     public ICollection<BiometricIdAssignment> BiometricIdHistory { get; set; } = [];
+    public ICollection<EmployeeExperience> Experiences { get; set; } = [];
+    public ICollection<SalaryRevision> SalaryRevisions { get; set; } = [];
+    public ICollection<Resignation> Resignations { get; set; } = [];
 }

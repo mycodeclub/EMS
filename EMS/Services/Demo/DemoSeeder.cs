@@ -2,6 +2,8 @@ using System.Security.Claims;
 using EMS.Data;
 using EMS.Models;
 using EMS.Models.Common;
+using EMS.Services.Leave;
+using EMS.Services.People;
 using EMS.Services.Timekeeping;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -34,6 +36,8 @@ public record DemoLogin(string UserId, string Email, string Role, string Label, 
 public class DemoSeeder(
     ApplicationDbContext db,
     UserManager<IdentityUser> users,
+    LeaveService leave,
+    PhotoStore photos,
     IOptions<DemoOptions> options,
     ILogger<DemoSeeder> logger)
 {
@@ -95,9 +99,20 @@ public class DemoSeeder(
             .Where(o => o.IsDemo || (o.OwnerUserId != null && demoUserIds.Contains(o.OwnerUserId)))
             .Select(o => o.UniqueId).ToListAsync(ct);
 
+        // Logins visitors gave to demo employees (beyond the four fixed ones) go too.
+        var extraUserIds = await db.Employees.IgnoreQueryFilters()
+            .Where(e => orgIds.Contains(e.OrganizationId) && e.UserId != null && !demoUserIds.Contains(e.UserId))
+            .Select(e => e.UserId!).ToListAsync(ct);
+
         if (orgIds.Count > 0)
         {
             var employees = db.Employees.IgnoreQueryFilters().Where(e => orgIds.Contains(e.OrganizationId)).Select(e => e.UniqueId);
+            var photoFiles = await db.Employees.IgnoreQueryFilters().Where(e => orgIds.Contains(e.OrganizationId) && e.PhotoPath != null)
+                .Select(e => e.PhotoPath).ToListAsync(ct);
+            photoFiles.ForEach(photos.Delete);
+            await db.EmployeeExperiences.IgnoreQueryFilters().Where(x => employees.Contains(x.EmployeeId)).ExecuteDeleteAsync(ct);
+            await db.SalaryRevisions.IgnoreQueryFilters().Where(x => employees.Contains(x.EmployeeId)).ExecuteDeleteAsync(ct);
+            await db.Resignations.IgnoreQueryFilters().Where(x => employees.Contains(x.EmployeeId)).ExecuteDeleteAsync(ct);
             await db.Attendances.IgnoreQueryFilters().Where(a => employees.Contains(a.EmployeeId)).ExecuteDeleteAsync(ct);
             await db.LeaveApplications.IgnoreQueryFilters().Where(a => employees.Contains(a.EmployeeId)).ExecuteDeleteAsync(ct);
             await db.EmployeeLeaveBalances.IgnoreQueryFilters().Where(b => employees.Contains(b.EmployeeId)).ExecuteDeleteAsync(ct);
@@ -115,7 +130,7 @@ public class DemoSeeder(
         }
 
         // Identity's own tables (roles, claims, logins, tokens) cascade.
-        await db.Users.Where(u => demoUserIds.Contains(u.Id)).ExecuteDeleteAsync(ct);
+        await db.Users.Where(u => demoUserIds.Contains(u.Id) || extraUserIds.Contains(u.Id)).ExecuteDeleteAsync(ct);
     }
 
     private async Task CreateAsync(CancellationToken ct)
@@ -214,6 +229,102 @@ public class DemoSeeder(
                 db.Attendances.Add(DayRecord(employee, i, day, holidays.ContainsKey(day)));
             }
         }
+        await db.SaveChangesAsync(ct);
+
+        await SeedLeaveAsync(employees, today, ct);
+        await SeedPeopleAsync(employees, today, ct);
+    }
+
+    /// <summary>Leave types and balances; every seeded "On leave" day becomes an approved casual leave.</summary>
+    private async Task SeedLeaveAsync(List<Employee> employees, DateOnly today, CancellationToken ct)
+    {
+        var casual = (await leave.TypesAsync(employees[0].OrganizationId, ct)).First(t => t.Code == "CL");
+        var sick = (await leave.TypesAsync(employees[0].OrganizationId, ct)).First(t => t.Code == "SL");
+        var leaveDays = await db.Attendances.Where(a => a.Status == AttendanceStatus.OnLeave && employees.Select(e => e.UniqueId).Contains(a.EmployeeId)).ToListAsync(ct);
+
+        foreach (var employee in employees)
+        {
+            foreach (var year in leaveDays.Where(a => a.EmployeeId == employee.UniqueId).Select(a => a.AttendanceDate.Year).Append(today.Year).Distinct())
+                await leave.BalancesAsync(employee, year, ct);
+        }
+        var balances = await db.EmployeeLeaveBalances.Where(b => employees.Select(e => e.UniqueId).Contains(b.EmployeeId)).ToListAsync(ct);
+
+        foreach (var day in leaveDays)
+        {
+            db.LeaveApplications.Add(new LeaveApplication
+            {
+                EmployeeId = day.EmployeeId, LeaveTypeId = casual.UniqueId, FromDate = day.AttendanceDate, ToDate = day.AttendanceDate,
+                TotalDays = 1, Reason = "Personal work", AppliedOn = day.AttendanceDate.AddDays(-3).ToDateTime(new TimeOnly(10, 0)).ToUniversalTime(),
+                Status = LeaveStatus.Approved, ActionedOn = day.AttendanceDate.AddDays(-2).ToDateTime(new TimeOnly(11, 0)).ToUniversalTime(),
+            });
+            day.Remarks = "Casual leave (approved)";
+            var balance = balances.First(b => b.EmployeeId == day.EmployeeId && b.LeaveTypeId == casual.UniqueId && b.Year == day.AttendanceDate.Year);
+            balance.Used = Math.Min(balance.Used + 1, balance.Total);
+        }
+
+        // Waiting for HR: the demo employee next week, and a sick day tomorrow for E005.
+        var monday = today.AddDays(((int)DayOfWeek.Monday - (int)today.DayOfWeek + 7) % 7 + 7);
+        Pending(employees[2], casual, monday, monday.AddDays(1), 2, "Cousin's wedding in Nagpur");
+        var tomorrow = today.AddDays(today.DayOfWeek == DayOfWeek.Saturday ? 2 : 1);
+        Pending(employees[4], sick, tomorrow, tomorrow, 1, "Dental appointment");
+        await db.SaveChangesAsync(ct);
+
+        void Pending(Employee e, LeaveType type, DateOnly from, DateOnly to, decimal days, string reason) =>
+            db.LeaveApplications.Add(new LeaveApplication
+            {
+                EmployeeId = e.UniqueId, LeaveTypeId = type.UniqueId, FromDate = from, ToDate = to, TotalDays = days,
+                Reason = reason, AppliedOn = DateTime.UtcNow.AddHours(-5),
+            });
+    }
+
+    /// <summary>A full profile and an appraisal for the demo employee, one colleague on notice and one resignation to review.</summary>
+    private async Task SeedPeopleAsync(List<Employee> employees, DateOnly today, CancellationToken ct)
+    {
+        var priya = employees[2];
+        priya.DateOfBirth = new DateOnly(1992, 3, 14);
+        priya.HighestQualification = "M.Sc. Physics, University of Pune";
+        priya.CurrentAddress = "Flat 4B, Sai Residency, Baner Road, Pune 411045";
+        priya.EmergencyContactName = "Suresh Nair (father)";
+        priya.EmergencyContactPhone = "98220 11223";
+        priya.Pan = "ABCDE1234F";
+        priya.Aadhaar = "234567890123";
+        priya.BankAccountHolder = "Priya Nair";
+        priya.BankName = "State Bank of India";
+        priya.BankAccountNumber = "30012345678";
+        priya.BankIfsc = "SBIN0001234";
+        db.EmployeeExperiences.AddRange(
+            new EmployeeExperience { EmployeeId = priya.UniqueId, Company = "Sunrise Junior College", Designation = "Physics Teacher", FromDate = new(2016, 6, 1), ToDate = new(2019, 5, 31) },
+            new EmployeeExperience { EmployeeId = priya.UniqueId, Company = "Apex Coaching Classes", Designation = "Senior Faculty", FromDate = new(2019, 6, 15), ToDate = new(2021, 6, 15) });
+        priya.PriorExperienceMonths = 59;
+
+        // Appraisal on 1 April: the salary before it was 48,000.
+        var april = new DateOnly(today.Month >= 4 ? today.Year : today.Year - 1, 4, 1);
+        db.SalaryRevisions.Add(new SalaryRevision
+        {
+            EmployeeId = priya.UniqueId, EffectiveFrom = april, PreviousSalary = 48000, NewSalary = priya.MonthlySalary ?? 52000,
+            Remarks = $"Annual appraisal {april.Year}: rated Exceeds Expectations.",
+        });
+
+        // E004 resigned three weeks ago and is serving notice; E009 has just resigned.
+        var arjun = employees[3];
+        var submitted = today.AddDays(-10);
+        var lastDay = submitted.AddDays(arjun.NoticePeriodDays);
+        db.Resignations.Add(new Resignation
+        {
+            EmployeeId = arjun.UniqueId, SubmittedAt = submitted.ToDateTime(new TimeOnly(10, 30)).ToUniversalTime(),
+            Reason = "Pursuing a PhD at IISER Pune.", RequestedLastDay = lastDay, LastWorkingDay = lastDay,
+            Status = ResignationStatus.Accepted, ActionedAt = submitted.AddDays(1).ToDateTime(new TimeOnly(12, 0)).ToUniversalTime(),
+            Remarks = "Accepted. Please complete the hand-over of lab records.",
+        });
+        arjun.DateOfLeaving = lastDay;
+        arjun.Status = EmployeeStatus.OnNotice;
+
+        var vikram = employees[8];
+        db.Resignations.Add(new Resignation
+        {
+            EmployeeId = vikram.UniqueId, SubmittedAt = DateTime.UtcNow.AddHours(-20),
+            Reason = "Relocating to my home town.", RequestedLastDay = today.AddDays(vikram.NoticePeriodDays),
+        });
         await db.SaveChangesAsync(ct);
     }
 

@@ -1,0 +1,31 @@
+@model Employee
+@{
+    var organization = (Organization)ViewData["Organization"]!;
+    var address = string.Join(", ", new[] { organization.Address.Line1, organization.Address.Line2, organization.Address.City, organization.Address.State, organization.Address.PinCode }
+        .Where(p => !string.IsNullOrWhiteSpace(p)));
+}
+<div class="page-head no-print">
+    <a class="btn btn-ghost" asp-action="Index" asp-route-employeeId="@ViewData["EmployeeId"]">‹ All letters</a>
+    <div class="page-actions">
+        <button type="button" class="btn" onclick="window.print()">Print / save as PDF</button>
+    </div>
+</div>
+<header class="slip-head">
+    <div>
+        <h2>@organization.Name</h2>
+        <p>@address</p>
+        <p>@string.Join(" · ", new[] { organization.Phone, organization.Email }.Where(p => !string.IsNullOrWhiteSpace(p)))</p>
+    </div>
+    <div class="slip-title">
+        <b>@ViewData["LetterTitle"]</b>
+        <p>@ViewData["LetterDate"]</p>
+    </div>
+</header>
+<p class="letter-to">
+    <b>@Model.FullName</b><br />
+    Employee code @Model.EmpCode<br />
+    @if (Model.CurrentAddress is not null)
+    {
+        @Model.CurrentAddress
+    }
+</p>

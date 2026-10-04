@@ -24,6 +24,9 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<BiometricPunch> BiometricPunches => Set<BiometricPunch>();
     public DbSet<BiometricIdAssignment> BiometricIdAssignments => Set<BiometricIdAssignment>();
     public DbSet<Enquiry> Enquiries => Set<Enquiry>();
+    public DbSet<EmployeeExperience> EmployeeExperiences => Set<EmployeeExperience>();
+    public DbSet<SalaryRevision> SalaryRevisions => Set<SalaryRevision>();
+    public DbSet<Resignation> Resignations => Set<Resignation>();
 
     /// <summary>Name of the global soft-delete query filter (lift it with IgnoreQueryFilters([SoftDeleteFilter])).</summary>
     public const string SoftDeleteFilter = "SoftDelete";
@@ -108,6 +111,15 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         });
 
         builder.Entity<Enquiry>().HasIndex(e => new { e.Status, e.CreatedAt });
+
+        builder.Entity<SalaryRevision>(r =>
+        {
+            r.Property(x => x.PreviousSalary).HasPrecision(12, 2);
+            r.Property(x => x.NewSalary).HasPrecision(12, 2);
+            r.HasIndex(x => new { x.EmployeeId, x.EffectiveFrom });
+        });
+        builder.Entity<Resignation>().HasIndex(x => new { x.EmployeeId, x.Status });
+        builder.Entity<LeaveApplication>().HasIndex(x => x.Status);
 
         // Hide soft-deleted rows from every query.
         foreach (var type in builder.Model.GetEntityTypes()

@@ -1,7 +1,9 @@
 @using EMS.Models.Common
 @{
     var controller = ViewContext.RouteData.Values["controller"] as string;
+    var action = ViewContext.RouteData.Values["action"] as string;
     string? Current(string name) => name == controller ? "page" : null;
+    string? CurrentMy(params string[] actions) => controller == "My" && actions.Contains(action) ? "page" : null;
     bool Any(string roles) => roles.Split(',').Any(User.IsInRole);
     var people = Any(AppRoles.PeopleManagers);
 }
@@ -25,6 +27,10 @@ if (people)
 <a asp-area="Org" asp-controller="Attendance" asp-action="Index" aria-current="@Current("Attendance")">
     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /><path d="m9 16 2 2 4-4" /></svg>
     Attendance
+</a>
+<a asp-area="Org" asp-controller="Requests" asp-action="Index" aria-current="@Current("Requests")">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>
+    Leave &amp; resignations
 </a>
 }
 if (Any(AppRoles.PayrollManagers))
@@ -57,8 +63,29 @@ if (Any(AppRoles.PayrollManagers))
 @if (Any(AppRoles.SelfService))
 {
 <p class="side-label">Me</p>
-<a asp-area="Org" asp-controller="My" asp-action="Index" aria-current="@Current("My")">
+<a asp-area="Org" asp-controller="My" asp-action="Index" aria-current="@CurrentMy("Index", "Slip")">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
+    My attendance
+</a>
+<a asp-area="Org" asp-controller="My" asp-action="Leave" aria-current="@CurrentMy("Leave")">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4M16 2v4" /><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" /></svg>
+    Leave
+</a>
+<a asp-area="Org" asp-controller="My" asp-action="Profile" aria-current="@CurrentMy("Profile")">
     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1" /></svg>
-    My attendance &amp; slips
+    My profile
+</a>
+<a asp-area="Org" asp-controller="Letters" asp-action="Index" aria-current="@Current("Letters")">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6M8 13h8M8 17h5" /></svg>
+    Letters
+</a>
+<a asp-area="Org" asp-controller="My" asp-action="Resignation" aria-current="@CurrentMy("Resignation")">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="m16 17 5-5-5-5M21 12H9" /></svg>
+    Resignation
 </a>
 }
+<p class="side-label">Account</p>
+<a asp-area="Org" asp-controller="Account" asp-action="Index" aria-current="@Current("Account")">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+    Account &amp; password
+</a>

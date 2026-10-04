@@ -1,0 +1,14 @@
+@model Resignation?
+@if (Model is { Status: ResignationStatus.Accepted, LastWorkingDay: { } last })
+{
+    var left = last.DayNumber - DateOnly.FromDateTime(DateTime.Today).DayNumber;
+    <p class="notice notice-warn" role="note">
+        <b>On notice.</b> Your last working day is @last.ToString("dddd, dd MMMM yyyy")
+        (@(left > 0 ? $"{left} day{(left == 1 ? "" : "s")} to go" : left == 0 ? "today" : "passed")).
+        <a asp-controller="Letters" asp-action="Index">Relieving letter</a>
+    </p>
+}
+else if (Model is { Status: ResignationStatus.Pending })
+{
+    <p class="notice" role="note">Your resignation is waiting for HR. You asked for @Model.RequestedLastDay.ToString("dd MMM yyyy") as your last day. <a asp-controller="My" asp-action="Resignation">Details</a></p>
+}

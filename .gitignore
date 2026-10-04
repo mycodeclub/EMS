@@ -488,3 +488,6 @@ $RECYCLE.BIN/
 
 # Emails saved locally when no SMTP host is configured
 EMS/App_Data/
+
+# Recorded demo video (regenerate with demo-video/record_demo.py)
+demo-video/*.mp4

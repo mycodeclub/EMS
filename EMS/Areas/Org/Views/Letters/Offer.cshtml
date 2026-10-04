@@ -1,0 +1,26 @@
+@model Employee
+@using EMS.Services.Timekeeping
+@{
+    var organization = (Organization)ViewData["Organization"]!;
+    var monthly = (decimal)ViewData["JoiningSalary"]!;
+    ViewData["Title"] = $"Offer letter {Model.EmpCode}";
+    ViewData["LetterTitle"] = "Offer letter";
+    ViewData["LetterDate"] = Model.DateOfJoining.AddDays(-14).ToString("dd MMMM yyyy");
+}
+<article class="card slip letter">
+    <partial name="_LetterHead" model="Model" />
+    <p><b>Subject: Offer of employment</b></p>
+    <p>Dear @Model.FirstName,</p>
+    <p>We are pleased to offer you the position of <b>@(Model.Designation ?? "staff member")</b>@(Model.Department is null ? "" : $" in the {Model.Department} department") at @organization.Name, on the terms below.</p>
+    <dl class="slip-meta">
+        <div><span>Designation</span><b>@(Model.Designation ?? "—")</b></div>
+        <div><span>Date of joining</span><b>@Model.DateOfJoining.ToShortDate()</b></div>
+        <div><span>Gross monthly salary</span><b>@monthly.ToRupees()</b></div>
+        <div><span>Annual gross (CTC)</span><b>@((monthly * 12).ToRupees())</b></div>
+        <div><span>Shift</span><b>@(Model.Shift is { } s ? $"{s.Name}, {PunchRules.Clock(s.StartTime)}–{PunchRules.Clock(s.EndTime)}" : "As assigned")</b></div>
+        <div><span>Notice period</span><b>@Model.NoticePeriodDays days</b></div>
+    </dl>
+    <p>Your salary will be paid monthly, in proportion to the days you are paid for under the attendance and leave rules. Statutory deductions apply as per law. Either side may end the employment by giving @Model.NoticePeriodDays days' notice in writing.</p>
+    <p>Please report to the head office on @Model.DateOfJoining.ToString("dddd, dd MMMM yyyy") with your educational certificates, PAN and Aadhaar. We look forward to working with you.</p>
+    <partial name="_SignOff" />
+</article>

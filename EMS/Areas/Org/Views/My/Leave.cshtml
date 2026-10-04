@@ -1,0 +1,109 @@
+@model MyLeavePage
+@using EMS.Services.Leave
+@{
+    ViewData["Title"] = "Leave";
+    var today = DateOnly.FromDateTime(DateTime.Today);
+    string Badge(LeaveStatus status) => status switch
+    {
+        LeaveStatus.Approved => "badge-green",
+        LeaveStatus.Pending => "badge-blue",
+        LeaveStatus.Rejected => "badge-orange",
+        _ => "",
+    };
+    var stats = Model.Balances.Select(b => new EMS.Models.Admin.StatTile(
+        b.Type.Name, b.Available.ToString("0.#"),
+        $"of {b.Total:0.#} · {b.Used:0.#} used{(b.Pending > 0 ? $" · {b.Pending:0.#} pending" : "")}")).ToList();
+}
+
+<header class="page-head">
+    <div>
+        <h1>Leave</h1>
+        <p>Your balance for @Model.Year, what you have applied for, and a form to apply. Sundays and holidays are not counted.</p>
+    </div>
+</header>
+
+<partial name="_Stats" model="stats" />
+
+<div class="grid-3-1">
+    <section class="card">
+        <div class="card-head">
+            <h2>My applications</h2>
+            <span>@Model.Applications.Count in total</span>
+        </div>
+        @if (Model.Applications.Count == 0)
+        {
+            <p class="empty">You have not applied for leave yet.</p>
+        }
+        else
+        {
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Dates</th><th>Type</th><th class="num">Days</th><th>Status</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var a in Model.Applications)
+                        {
+                            <tr>
+                                <td>
+                                    @a.FromDate.ToString("dd MMM")@(a.ToDate != a.FromDate ? $" – {a.ToDate:dd MMM}" : "") @a.ToDate.Year
+                                    <small>@a.Reason</small>
+                                </td>
+                                <td>@a.LeaveType.Name</td>
+                                <td class="num">@a.TotalDays.ToString("0.#")</td>
+                                <td>
+                                    <span class="badge @Badge(a.Status)">@(a.Status == LeaveStatus.Pending ? "Waiting for approval" : a.Status.ToString())</span>
+                                    @if (a.ApproverRemarks is not null)
+                                    {
+                                        <small>@a.ApproverRemarks</small>
+                                    }
+                                </td>
+                                <td class="num">
+                                    @if (a.Status == LeaveStatus.Pending)
+                                    {
+                                        <form method="post" asp-action="CancelLeave" asp-route-id="@a.UniqueId">
+                                            <button type="submit" class="btn btn-danger btn-sm">Cancel</button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+
+    <section class="card form-card">
+        <h2 class="form-section" style="margin-top:0">Apply for leave</h2>
+        <form method="post" asp-action="Leave" novalidate>
+            <div asp-validation-summary="All" class="alert alert-error"></div>
+            <div class="form-grid" style="grid-template-columns:1fr">
+                <div class="field">
+                    <label asp-for="Input.LeaveTypeId"></label>
+                    <select asp-for="Input.LeaveTypeId">
+                        <option value="">Choose…</option>
+                        @foreach (var b in Model.Balances)
+                        {
+                            <option value="@b.Type.UniqueId" selected="@(Model.Input.LeaveTypeId == b.Type.UniqueId)">@b.Type.Name (@b.Available.ToString("0.#") left)</option>
+                        }
+                    </select>
+                </div>
+                <div class="field">
+                    <label asp-for="Input.FromDate"></label>
+                    <input asp-for="Input.FromDate" type="date" min="@today.AddDays(-LeaveService.BackdateDays).ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="field">
+                    <label asp-for="Input.ToDate"></label>
+                    <input asp-for="Input.ToDate" type="date" min="@today.AddDays(-LeaveService.BackdateDays).ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="choice"><label><input asp-for="Input.IsHalfDay" /> Half day <small>One day only</small></label></div>
+                <div class="field">
+                    <label asp-for="Input.Reason"></label>
+                    <textarea asp-for="Input.Reason" rows="3" maxlength="1000" placeholder="e.g. Family function"></textarea>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn">Apply</button>
+            </div>
+        </form>
+    </section>
+</div>

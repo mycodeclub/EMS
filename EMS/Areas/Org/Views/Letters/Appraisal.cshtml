@@ -1,0 +1,28 @@
+@model Employee
+@{
+    var organization = (Organization)ViewData["Organization"]!;
+    var r = (SalaryRevision)ViewData["Revision"]!;
+    ViewData["Title"] = $"Appraisal letter {Model.EmpCode} {r.EffectiveFrom:MMM yyyy}";
+    ViewData["LetterTitle"] = "Appraisal letter";
+    ViewData["LetterDate"] = r.EffectiveFrom.ToString("dd MMMM yyyy");
+}
+<article class="card slip letter">
+    <partial name="_LetterHead" model="Model" />
+    <p><b>Subject: Revision of salary</b></p>
+    <p>Dear @Model.FirstName,</p>
+    <p>In recognition of your performance and contribution to @organization.Name, we are pleased to revise your salary with effect from <b>@r.EffectiveFrom.ToString("dd MMMM yyyy")</b>.</p>
+    <table>
+        <thead><tr><th></th><th class="num">Monthly</th><th class="num">Annual</th></tr></thead>
+        <tbody>
+            <tr><td>Previous gross salary</td><td class="num">@r.PreviousSalary.ToRupees()</td><td class="num">@((r.PreviousSalary * 12).ToRupees())</td></tr>
+            <tr><td><b>Revised gross salary</b></td><td class="num"><b>@r.NewSalary.ToRupees()</b></td><td class="num"><b>@((r.NewSalary * 12).ToRupees())</b></td></tr>
+            <tr><td>Increase</td><td class="num">@((r.NewSalary - r.PreviousSalary).ToRupees())</td><td class="num">@r.IncreasePercent.ToString("+0.#;-0.#;0")%</td></tr>
+        </tbody>
+    </table>
+    @if (r.Remarks is not null)
+    {
+        <p style="margin-top:16px">@r.Remarks</p>
+    }
+    <p style="margin-top:16px">All other terms of your employment remain unchanged. We thank you for your efforts and wish you continued success.</p>
+    <partial name="_SignOff" />
+</article>

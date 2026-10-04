@@ -1,0 +1,28 @@
+@model Employee
+@using EMS.Services.Timekeeping
+@{
+    var shift = Model.Shift;
+}
+<section class="card">
+    <div class="card-head">
+        <h2>My shift</h2>
+        <span>@(shift is null ? "No fixed shift" : shift.CrossesMidnight ? "Night shift: ends the next morning" : "Day shift")</span>
+    </div>
+    @if (shift is null)
+    {
+        <p class="empty">You have no fixed shift. Ask HR which timings apply to you.</p>
+    }
+    else
+    {
+        <dl class="slip-meta shift-meta">
+            <div><span>Shift</span><b>@shift.Name (@shift.Code)</b></div>
+            <div><span>Timings</span><b>@PunchRules.Clock(shift.StartTime) – @PunchRules.Clock(shift.EndTime)</b></div>
+            <div><span>Break</span><b>@shift.BreakMinutes min</b></div>
+            <div><span>Late after</span><b>@PunchRules.Clock(shift.StartTime.AddMinutes(shift.GraceMinutes)) (@shift.GraceMinutes min grace)</b></div>
+            <div><span>Full day</span><b>@PunchRules.Duration(shift.FullDayMinutes) worked</b></div>
+            <div><span>Half day</span><b>@PunchRules.Duration(shift.HalfDayMinutes) worked</b></div>
+            <div><span>Weekly off</span><b>Sunday</b></div>
+            <div><span>Notice period</span><b>@Model.NoticePeriodDays days</b></div>
+        </dl>
+    }
+</section>

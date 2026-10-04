@@ -56,10 +56,16 @@
         <div class="auth-demo-list">
             @foreach (var login in EMS.Services.Demo.DemoSeeder.Logins)
             {
-                <button type="button" class="auth-demo-login" data-email="@login.Email" data-password="@Model.Demo.Password" title="@login.Description">
-                    <b>@login.Label</b>
-                    <span>@login.Email</span>
-                </button>
+                @* One form per login, so the button signs in even before any script has loaded. *@
+                @* Only a real ?ReturnUrl is passed on, so a plain sign-in lands on the role's own panel. *@
+                <form method="post" asp-route-returnUrl="@(string.IsNullOrEmpty(HttpContext.Request.Query["ReturnUrl"]) ? null : HttpContext.Request.Query["ReturnUrl"].ToString())">
+                    <input type="hidden" name="Input.Email" value="@login.Email" />
+                    <input type="hidden" name="Input.Password" value="@Model.Demo.Password" />
+                    <button type="submit" class="auth-demo-login" title="@login.Description">
+                        <b>@login.Label</b>
+                        <span>@login.Email</span>
+                    </button>
+                </form>
             }
         </div>
     </section>
@@ -70,12 +76,4 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        // Demo logins: fill the form and sign in.
-        document.querySelectorAll('.auth-demo-login').forEach(button => button.addEventListener('click', () => {
-            document.getElementById('Input_Email').value = button.dataset.email;
-            document.getElementById('Input_Password').value = button.dataset.password;
-            document.getElementById('account').requestSubmit();
-        }));
-    </script>
 }

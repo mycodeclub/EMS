@@ -134,7 +134,7 @@ public class TrialService(
     }
 
     /// <summary>12 characters with upper, lower, digit and symbol, e.g. "Kmt@4821Pqw7"; avoids look-alike characters.</summary>
-    private static string TemporaryPassword()
+    public static string TemporaryPassword()
     {
         static string Pick(string chars, int count) =>
             new(Enumerable.Range(0, count).Select(_ => chars[RandomNumberGenerator.GetInt32(chars.Length)]).ToArray());

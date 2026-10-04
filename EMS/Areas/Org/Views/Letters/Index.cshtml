@@ -1,0 +1,54 @@
+@model LettersPage
+@{
+    ViewData["Title"] = Model.IsSelf ? "My letters" : $"Letters · {Model.Employee.FullName}";
+    int? id = Model.IsSelf ? null : Model.Employee.UniqueId;
+}
+
+<header class="page-head">
+    <div>
+        <h1>@(Model.IsSelf ? "My letters" : $"Letters for {Model.Employee.FullName}")</h1>
+        <p>Open a letter and use <b>Print / save as PDF</b> to download it.</p>
+    </div>
+    @if (!Model.IsSelf)
+    {
+        <a class="btn btn-ghost" asp-controller="Employees" asp-action="Edit" asp-route-id="@Model.Employee.UniqueId">‹ Back to employee</a>
+    }
+</header>
+
+<section class="card">
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Letter</th><th>Dated</th><th></th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>Offer letter<small>@Model.Employee.Designation, joining @Model.Employee.DateOfJoining.ToShortDate()</small></td>
+                    <td>@Model.Employee.DateOfJoining.AddDays(-14).ToShortDate()</td>
+                    <td class="num"><a class="btn btn-secondary btn-sm" asp-action="Offer" asp-route-employeeId="@id">Open</a></td>
+                </tr>
+                @foreach (var r in Model.Revisions)
+                {
+                    <tr>
+                        <td>Appraisal letter<small>@r.PreviousSalary.ToRupees() → @r.NewSalary.ToRupees() a month (@r.IncreasePercent.ToString("+0.#;-0.#;0")%)</small></td>
+                        <td>@r.EffectiveFrom.ToShortDate()</td>
+                        <td class="num"><a class="btn btn-secondary btn-sm" asp-action="Appraisal" asp-route-id="@r.UniqueId" asp-route-employeeId="@id">Open</a></td>
+                    </tr>
+                }
+                @if (Model.Accepted is { LastWorkingDay: { } last })
+                {
+                    <tr>
+                        <td>Relieving letter<small>Last working day @last.ToShortDate()</small></td>
+                        <td>@Model.Accepted.ActionedAt?.ToLocalTime().ToShortDate()</td>
+                        <td class="num"><a class="btn btn-secondary btn-sm" asp-action="Relieving" asp-route-employeeId="@id">Open</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @if (Model.Revisions.Count == 0 || Model.Accepted is null)
+    {
+        <p class="card-body muted" style="font-size:13px">
+            @(Model.Revisions.Count == 0 ? "Appraisal letters appear here after a salary revision. " : "")
+            @(Model.Accepted is null ? "A relieving letter appears once a resignation is accepted." : "")
+        </p>
+    }
+</section>

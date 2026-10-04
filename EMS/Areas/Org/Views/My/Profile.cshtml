@@ -1,0 +1,206 @@
+@model MyProfilePage
+@{
+    ViewData["Title"] = "My profile";
+    var e = Model.Employee;
+    var today = DateOnly.FromDateTime(DateTime.Today);
+    var total = e.TotalExperienceMonths(today);
+    static string Years(int months) => months < 12 ? $"{months} mo" : $"{months / 12} yr{(months / 12 == 1 ? "" : "s")}{(months % 12 > 0 ? $" {months % 12} mo" : "")}";
+    var initials = string.Concat(new[] { e.FirstName, e.LastName }.Where(n => !string.IsNullOrEmpty(n)).Select(n => n![0]));
+}
+
+<header class="page-head">
+    <div>
+        <h1>My profile</h1>
+        <p>Keep your details up to date. Your name, job and salary are managed by HR.</p>
+    </div>
+</header>
+
+<div class="grid-3-1">
+    <section class="card">
+        <div class="card-body profile-head">
+            @if (e.PhotoPath is not null)
+            {
+                <img class="avatar" src="@Url.Action("Photo")?v=@e.PhotoPath.GetHashCode()" alt="Your photo" width="96" height="96" />
+            }
+            else
+            {
+                <span class="avatar" aria-hidden="true">@initials</span>
+            }
+            <div>
+                <h2>@e.FullName</h2>
+                <p class="muted">@e.Designation · @e.Department</p>
+                <form method="post" asp-action="UploadPhoto" enctype="multipart/form-data" class="photo-form">
+                    <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required aria-label="Profile photo" />
+                    <button type="submit" class="btn btn-secondary btn-sm">Upload photo</button>
+                </form>
+                @if (e.PhotoPath is not null)
+                {
+                    <form method="post" asp-action="RemovePhoto">
+                        <button type="submit" class="btn btn-danger btn-sm">Remove photo</button>
+                    </form>
+                }
+                <p class="muted" style="font-size:12px">JPEG, PNG or WebP, up to 2 MB.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="card-head"><h2>Job</h2><span>Set by HR</span></div>
+        <dl class="slip-meta shift-meta" style="grid-template-columns:1fr">
+            <div><span>Employee code</span><b>@e.EmpCode</b></div>
+            <div><span>Joined</span><b>@e.DateOfJoining.ToShortDate()</b></div>
+            <div><span>Shift</span><b>@(e.Shift?.Name ?? "No fixed shift")</b></div>
+            <div><span>Notice period</span><b>@e.NoticePeriodDays days</b></div>
+            <div><span>Total experience</span><b>@Years(total)</b></div>
+        </dl>
+    </section>
+</div>
+
+<form method="post" asp-action="Profile" novalidate>
+    <div asp-validation-summary="ModelOnly" class="alert alert-error"></div>
+    <section class="card form-card">
+        <h2 class="form-section" style="margin-top:0">Personal details</h2>
+        <div class="form-grid">
+            <div class="field">
+                <label asp-for="Input.Gender"></label>
+                <select asp-for="Input.Gender" asp-items="Html.GetEnumSelectList<Gender>()"><option value="">—</option></select>
+            </div>
+            <div class="field">
+                <label asp-for="Input.DateOfBirth"></label>
+                <input asp-for="Input.DateOfBirth" type="date" />
+                <span asp-validation-for="Input.DateOfBirth"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Input.Mobile"></label>
+                <input asp-for="Input.Mobile" type="tel" />
+                <span asp-validation-for="Input.Mobile"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Input.Email"></label>
+                <input asp-for="Input.Email" type="email" />
+                <span class="hint">To change the email you sign in with, use <a asp-controller="Account" asp-action="Index">Account</a>.</span>
+                <span asp-validation-for="Input.Email"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Input.HighestQualification"></label>
+                <input asp-for="Input.HighestQualification" placeholder="e.g. M.Sc. Physics" />
+            </div>
+            <div class="field span-2">
+                <label asp-for="Input.CurrentAddress"></label>
+                <textarea asp-for="Input.CurrentAddress" rows="2" maxlength="500"></textarea>
+            </div>
+            <div class="field">
+                <label asp-for="Input.EmergencyContactName"></label>
+                <input asp-for="Input.EmergencyContactName" />
+            </div>
+            <div class="field">
+                <label asp-for="Input.EmergencyContactPhone"></label>
+                <input asp-for="Input.EmergencyContactPhone" type="tel" />
+                <span asp-validation-for="Input.EmergencyContactPhone"></span>
+            </div>
+        </div>
+
+        <h2 class="form-section">Government IDs</h2>
+        <dl class="slip-meta" style="margin-top:0">
+            <div><span>PAN on record</span><b>@(Masks.Pan(e.Pan) ?? "Not given")</b></div>
+            <div><span>Aadhaar on record</span><b>@(Masks.Aadhaar(e.Aadhaar) ?? "Not given")</b></div>
+        </dl>
+        <div class="form-grid">
+            <div class="field">
+                <label asp-for="Input.Pan">@(e.Pan is null ? "PAN" : "Correct PAN")</label>
+                <input asp-for="Input.Pan" value="" maxlength="10" placeholder="ABCDE1234F" autocomplete="off" style="text-transform:uppercase" />
+                <span class="hint">Leave empty to keep the one on record.</span>
+                <span asp-validation-for="Input.Pan"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Input.Aadhaar">@(e.Aadhaar is null ? "Aadhaar" : "Correct Aadhaar")</label>
+                <input asp-for="Input.Aadhaar" value="" maxlength="12" inputmode="numeric" placeholder="12 digits" autocomplete="off" />
+                <span class="hint">Shown masked; only the last 4 digits are visible.</span>
+                <span asp-validation-for="Input.Aadhaar"></span>
+            </div>
+        </div>
+
+        <h2 class="form-section">Salary account</h2>
+        <div class="form-grid">
+            <div class="field">
+                <label asp-for="Input.BankAccountHolder"></label>
+                <input asp-for="Input.BankAccountHolder" />
+            </div>
+            <div class="field">
+                <label asp-for="Input.BankName"></label>
+                <input asp-for="Input.BankName" />
+            </div>
+            <div class="field">
+                <label asp-for="Input.BankAccountNumber"></label>
+                <input asp-for="Input.BankAccountNumber" inputmode="numeric" autocomplete="off" />
+                <span asp-validation-for="Input.BankAccountNumber"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Input.BankIfsc"></label>
+                <input asp-for="Input.BankIfsc" maxlength="11" style="text-transform:uppercase" />
+                <span asp-validation-for="Input.BankIfsc"></span>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn">Save profile</button>
+        </div>
+    </section>
+</form>
+
+<section class="card" id="experience">
+    <div class="card-head">
+        <h2>Previous experience</h2>
+        <span>@Years(e.PriorExperienceMonths) before joining</span>
+    </div>
+    @if (Model.Experiences.Count > 0)
+    {
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Company</th><th>From</th><th>To</th><th class="num">Duration</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var job in Model.Experiences)
+                    {
+                        <tr>
+                            <td>@job.Company<small>@job.Designation</small></td>
+                            <td>@job.FromDate.ToString("MMM yyyy")</td>
+                            <td>@job.ToDate.ToString("MMM yyyy")</td>
+                            <td class="num">@Years(job.Months)</td>
+                            <td class="num">
+                                <form method="post" asp-action="RemoveExperience" asp-route-id="@job.UniqueId">
+                                    <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    <form method="post" asp-action="AddExperience" class="card-body" novalidate>
+        <div class="form-grid">
+            <div class="field">
+                <label asp-for="NewExperience.Company"></label>
+                <input asp-for="NewExperience.Company" />
+                <span asp-validation-for="NewExperience.Company"></span>
+            </div>
+            <div class="field">
+                <label asp-for="NewExperience.Designation"></label>
+                <input asp-for="NewExperience.Designation" />
+            </div>
+            <div class="field">
+                <label asp-for="NewExperience.FromDate"></label>
+                <input asp-for="NewExperience.FromDate" type="date" />
+                <span asp-validation-for="NewExperience.FromDate"></span>
+            </div>
+            <div class="field">
+                <label asp-for="NewExperience.ToDate"></label>
+                <input asp-for="NewExperience.ToDate" type="date" />
+                <span asp-validation-for="NewExperience.ToDate"></span>
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-secondary">Add previous job</button>
+        </div>
+    </form>
+</section>

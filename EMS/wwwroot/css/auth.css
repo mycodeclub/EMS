@@ -180,3 +180,5 @@ body.auth {
 .auth-demo-login:hover { border-color: var(--accent); background: #fff; }
 .auth-demo-login b { font-size: 15px; font-weight: 600; }
 .auth-demo-login span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--muted); }
+.auth-demo-list form { margin: 0; display: flex; }
+.auth-demo-list .auth-demo-login { width: 100%; }

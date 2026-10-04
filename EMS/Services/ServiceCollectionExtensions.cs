@@ -1,7 +1,9 @@
 using EMS.Services.Common;
 using EMS.Services.Email;
 using EMS.Services.Import;
+using EMS.Services.Leave;
 using EMS.Services.Onboarding;
+using EMS.Services.People;
 using Microsoft.AspNetCore.Identity.UI.Services;
 
 namespace EMS.Services;
@@ -19,6 +21,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<TrialService>();
         services.AddScoped<EmployeeImporter>();
         services.AddScoped<AttendanceImporter>();
+        services.AddScoped<LeaveService>();
+        services.AddScoped<ResignationService>();
+        services.AddSingleton<PhotoStore>();
         return services;
     }
 }

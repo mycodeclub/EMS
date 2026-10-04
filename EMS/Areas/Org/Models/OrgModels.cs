@@ -72,6 +72,99 @@ public record MyMonth(int Year, int Month, Employee? Employee, IReadOnlyList<MyD
 /// <summary>One day on the rolls; Record is null when the day is not marked yet.</summary>
 public record MyDay(DateOnly Date, Attendance? Record);
 
+public record MyLeavePage(Employee Employee, int Year, IReadOnlyList<EMS.Services.Leave.LeaveBalanceRow> Balances,
+    IReadOnlyList<LeaveApplication> Applications, EMS.Services.Leave.LeaveRequestInput Input);
+
+public record MyProfilePage(Employee Employee, MyProfileInput Input, IReadOnlyList<EmployeeExperience> Experiences, ExperienceInput NewExperience);
+
+public record MyResignationPage(Employee Employee, Resignation? Current, IReadOnlyList<Resignation> History, ResignationInput Input);
+
+/// <summary>Letters available for an employee: offer, one appraisal letter per salary revision, relieving once a resignation is accepted.</summary>
+public record LettersPage(Employee Employee, IReadOnlyList<SalaryRevision> Revisions, Resignation? Accepted, bool IsSelf);
+
+/// <summary>HR's queue: pending leave, open resignations and recent leave decisions.</summary>
+public record RequestsPage(IReadOnlyList<LeaveApplication> PendingLeave, IReadOnlyList<Resignation> Resignations, IReadOnlyList<LeaveApplication> RecentLeave);
+
+/// <summary>What an employee can change on their own profile. Blank PAN / Aadhaar keep the saved value. PAN and IFSC are accepted in any case and saved in capitals.</summary>
+public class MyProfileInput
+{
+    public Gender? Gender { get; set; }
+    [Display(Name = "Date of birth")] public DateOnly? DateOfBirth { get; set; }
+    [Phone, StringLength(20)] public string? Mobile { get; set; }
+    [EmailAddress, StringLength(150), Display(Name = "Contact email")] public string? Email { get; set; }
+    [StringLength(150), Display(Name = "Highest qualification")] public string? HighestQualification { get; set; }
+    [StringLength(500), Display(Name = "Current address")] public string? CurrentAddress { get; set; }
+    [StringLength(150), Display(Name = "Emergency contact name")] public string? EmergencyContactName { get; set; }
+    [Phone, StringLength(20), Display(Name = "Emergency contact phone")] public string? EmergencyContactPhone { get; set; }
+
+    [StringLength(10), RegularExpression("^[A-Za-z]{5}[0-9]{4}[A-Za-z]$", ErrorMessage = "Enter the PAN as ABCDE1234F."), Display(Name = "PAN")]
+    public string? Pan { get; set; }
+    [StringLength(12), RegularExpression(Patterns.Aadhaar, ErrorMessage = "Enter the 12-digit Aadhaar number."), Display(Name = "Aadhaar")]
+    public string? Aadhaar { get; set; }
+
+    [StringLength(150), Display(Name = "Account holder name")] public string? BankAccountHolder { get; set; }
+    [StringLength(150), Display(Name = "Bank name")] public string? BankName { get; set; }
+    [StringLength(20), RegularExpression("^[0-9]{9,18}$", ErrorMessage = "Enter 9 to 18 digits."), Display(Name = "Account number")]
+    public string? BankAccountNumber { get; set; }
+    [StringLength(11), RegularExpression("^[A-Za-z]{4}0[A-Za-z0-9]{6}$", ErrorMessage = "Enter the IFSC as SBIN0001234."), Display(Name = "IFSC")]
+    public string? BankIfsc { get; set; }
+
+    public static MyProfileInput From(Employee e) => new()
+    {
+        Gender = e.Gender, DateOfBirth = e.DateOfBirth, Mobile = e.Mobile, Email = e.Email, HighestQualification = e.HighestQualification,
+        CurrentAddress = e.CurrentAddress, EmergencyContactName = e.EmergencyContactName, EmergencyContactPhone = e.EmergencyContactPhone,
+        BankAccountHolder = e.BankAccountHolder, BankName = e.BankName, BankAccountNumber = e.BankAccountNumber, BankIfsc = e.BankIfsc,
+    };
+
+    public void ApplyTo(Employee e)
+    {
+        static string? Clean(string? v) => string.IsNullOrWhiteSpace(v) ? null : v.Trim();
+        e.Gender = Gender;
+        e.DateOfBirth = DateOfBirth;
+        e.Mobile = Clean(Mobile);
+        e.Email = Clean(Email);
+        e.HighestQualification = Clean(HighestQualification);
+        e.CurrentAddress = Clean(CurrentAddress);
+        e.EmergencyContactName = Clean(EmergencyContactName);
+        e.EmergencyContactPhone = Clean(EmergencyContactPhone);
+        if (Clean(Pan) is { } pan) e.Pan = pan.ToUpperInvariant();
+        if (Clean(Aadhaar) is { } aadhaar) e.Aadhaar = aadhaar;
+        e.BankAccountHolder = Clean(BankAccountHolder);
+        e.BankName = Clean(BankName);
+        e.BankAccountNumber = Clean(BankAccountNumber);
+        e.BankIfsc = Clean(BankIfsc)?.ToUpperInvariant();
+    }
+}
+
+public class ExperienceInput
+{
+    [Required, StringLength(200)] public string Company { get; set; } = string.Empty;
+    [StringLength(100)] public string? Designation { get; set; }
+    [Required, Display(Name = "From")] public DateOnly? FromDate { get; set; }
+    [Required, Display(Name = "To")] public DateOnly? ToDate { get; set; }
+}
+
+public class ResignationInput
+{
+    [Required, StringLength(1000)] public string Reason { get; set; } = string.Empty;
+    [Required, Display(Name = "Last working day you are asking for")] public DateOnly? RequestedLastDay { get; set; }
+}
+
+public class SalaryRevisionInput
+{
+    [Required, Display(Name = "Effective from")] public DateOnly? EffectiveFrom { get; set; }
+    [Required, Range(1, 10_000_000), Display(Name = "New monthly salary (₹)")] public decimal? NewSalary { get; set; }
+    [StringLength(500)] public string? Remarks { get; set; }
+}
+
+/// <summary>Masks for showing identifiers: XXXX-XXXX-1234, ABXXXXX34F, XXXXXX6789.</summary>
+public static class Masks
+{
+    public static string? Aadhaar(string? v) => v is { Length: 12 } ? $"XXXX-XXXX-{v[8..]}" : v;
+    public static string? Pan(string? v) => v is { Length: 10 } ? $"{v[..2]}XXXXX{v[7..]}" : v;
+    public static string? Account(string? v) => v is { Length: > 4 } ? new string('X', v.Length - 4) + v[^4..] : v;
+}
+
 public class EmployeeInput
 {
     public int? Id { get; set; }
@@ -92,12 +185,14 @@ public class EmployeeInput
     [Display(Name = "Shift")] public int? ShiftId { get; set; }
     [Range(0, 10_000_000), Display(Name = "Monthly salary (₹)")] public decimal? MonthlySalary { get; set; }
     public EmployeeStatus Status { get; set; } = EmployeeStatus.Active;
+    [Range(0, 180), Display(Name = "Notice period (days)")] public int NoticePeriodDays { get; set; } = 30;
 
     public static EmployeeInput From(Employee e) => new()
     {
         Id = e.UniqueId, EmpCode = e.EmpCode, FirstName = e.FirstName, LastName = e.LastName, Gender = e.Gender,
         DateOfBirth = e.DateOfBirth, Email = e.Email, Mobile = e.Mobile, Department = e.Department, Designation = e.Designation,
         DateOfJoining = e.DateOfJoining, DateOfLeaving = e.DateOfLeaving, ShiftId = e.ShiftId, MonthlySalary = e.MonthlySalary, Status = e.Status,
+        NoticePeriodDays = e.NoticePeriodDays,
     };
 
     public void ApplyTo(Employee e)
@@ -115,5 +210,6 @@ public class EmployeeInput
         e.ShiftId = ShiftId;
         e.MonthlySalary = MonthlySalary;
         e.Status = Status;
+        e.NoticePeriodDays = NoticePeriodDays;
     }
 }

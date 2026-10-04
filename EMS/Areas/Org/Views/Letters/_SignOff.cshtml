@@ -1,0 +1,8 @@
+@{
+    var organization = (Organization)ViewData["Organization"]!;
+}
+<div class="letter-sign">
+    <p>For <b>@(organization.RegisteredName ?? organization.Name)</b></p>
+    <p class="letter-signature">Authorised signatory</p>
+</div>
+<p class="slip-foot">This is a computer-generated letter and does not need a signature.</p>

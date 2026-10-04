@@ -4,6 +4,7 @@
     var isNew = Model.Id is null;
     ViewData["Title"] = isNew ? "Add employee" : $"Edit {Model.FirstName}";
     var shifts = ViewData["Shifts"] as List<SelectListItem> ?? [];
+    var revisions = ViewData["Revisions"] as List<SalaryRevision> ?? [];
 }
 
 <header class="page-head">
@@ -11,6 +12,12 @@
         <h1>@(isNew ? "Add employee" : $"{Model.FirstName} {Model.LastName}")</h1>
         <p>@(isNew ? "Only first name and joining date are required; fill in the rest when you have it." : $"Employee code {Model.EmpCode}")</p>
     </div>
+    @if (!isNew)
+    {
+        <div class="page-actions">
+            <a class="btn btn-secondary btn-sm" asp-controller="Letters" asp-action="Index" asp-route-employeeId="@Model.Id">Letters</a>
+        </div>
+    }
 </header>
 
 <section class="card form-card" style="max-width:860px">
@@ -99,6 +106,12 @@
                 <label asp-for="Status"></label>
                 <select asp-for="Status" asp-items="Html.GetEnumSelectList<EmployeeStatus>()"></select>
             </div>
+            <div class="field">
+                <label asp-for="NoticePeriodDays"></label>
+                <input asp-for="NoticePeriodDays" type="number" min="0" max="180" />
+                <span class="hint">Shown to the employee when they resign, and in the offer letter.</span>
+                <span asp-validation-for="NoticePeriodDays"></span>
+            </div>
         </div>
 
         <div class="form-actions">
@@ -116,3 +129,109 @@
         </form>
     }
 </section>
+
+@if (!isNew)
+{
+    var login = ViewData["Login"] as (string? Email, string? Role)?;
+    var canGrantManagers = ViewData["CanGrantManagers"] is true;
+    var roles = EMS.Areas.Org.Controllers.EmployeesController.StaffRoles.Where(r => canGrantManagers || r.Role == AppRoles.Employee).ToList();
+    <section class="card" style="max-width:860px" id="login">
+        <div class="card-head">
+            <h2>Login access</h2>
+            <span>@(login is null ? "No login yet" : $"Signs in as {login.Value.Email}")</span>
+        </div>
+        @if (login is null)
+        {
+            <form asp-action="GrantAccess" asp-route-id="@Model.Id" method="post" class="card-body">
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="login-email">Sign-in email</label>
+                        <input id="login-email" name="email" type="email" required value="@Model.Email" placeholder="name@company.com" />
+                    </div>
+                    <div class="field">
+                        <label for="login-role">Access</label>
+                        <select id="login-role" name="role">
+                            @foreach (var (role, label) in roles)
+                            {
+                                <option value="@role">@label</option>
+                            }
+                        </select>
+                        <span class="hint">Employee: own attendance, leave, profile. HR: people and attendance. Accounts: salary slips.</span>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-secondary">Give login access</button>
+                    <span class="hint" style="font-size:12px;color:var(--muted)">A temporary password is shown once and emailed to them.</span>
+                </div>
+            </form>
+        }
+        else
+        {
+            <div class="card-body">
+                <div class="form-actions" style="margin-top:0">
+                    <form asp-action="ChangeAccess" asp-route-id="@Model.Id" method="post" class="form-actions" style="margin:0">
+                        <select name="role" aria-label="Access">
+                            @foreach (var (role, label) in roles)
+                            {
+                                <option value="@role" selected="@(login.Value.Role == role)">@label</option>
+                            }
+                        </select>
+                        <button type="submit" class="btn btn-secondary btn-sm">Change access</button>
+                    </form>
+                    <span class="spacer"></span>
+                    <form asp-action="RevokeAccess" asp-route-id="@Model.Id" method="post" style="margin:0">
+                        <button type="submit" class="btn btn-danger btn-sm">Remove login</button>
+                    </form>
+                </div>
+            </div>
+        }
+    </section>
+
+    <section class="card" style="max-width:860px">
+        <div class="card-head">
+            <h2>Salary revisions</h2>
+            <span>Each revision has an appraisal letter</span>
+        </div>
+        @if (revisions.Count > 0)
+        {
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Effective from</th><th class="num">Previous</th><th class="num">New</th><th class="num">Change</th><th>Remarks</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var r in revisions)
+                        {
+                            <tr>
+                                <td>@r.EffectiveFrom.ToShortDate()</td>
+                                <td class="num">@r.PreviousSalary.ToRupees()</td>
+                                <td class="num"><b>@r.NewSalary.ToRupees()</b></td>
+                                <td class="num">@r.IncreasePercent.ToString("+0.#;-0.#;0")%</td>
+                                <td>@(r.Remarks ?? "—")</td>
+                                <td class="num"><a class="btn btn-secondary btn-sm" asp-controller="Letters" asp-action="Appraisal" asp-route-id="@r.UniqueId" asp-route-employeeId="@Model.Id">Appraisal letter</a></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        <form asp-action="Revise" asp-route-id="@Model.Id" method="post" class="card-body">
+            <div class="form-grid">
+                <div class="field">
+                    <label for="Revision_EffectiveFrom">Effective from</label>
+                    <input id="Revision_EffectiveFrom" name="Revision.EffectiveFrom" type="date" required value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="field">
+                    <label for="Revision_NewSalary">New monthly salary (₹)</label>
+                    <input id="Revision_NewSalary" name="Revision.NewSalary" type="number" min="1" step="100" required placeholder="Now @((Model.MonthlySalary ?? 0).ToRupees())" />
+                </div>
+                <div class="field span-2">
+                    <label for="Revision_Remarks">Remarks</label>
+                    <input id="Revision_Remarks" name="Revision.Remarks" maxlength="500" placeholder="e.g. Annual appraisal 2026" />
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-secondary">Record salary revision</button>
+                <span class="hint" style="font-size:12px;color:var(--muted)">The monthly salary changes to the new amount straight away.</span>
+            </div>
+        </form>
+    </section>
+}

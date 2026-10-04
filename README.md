@@ -53,11 +53,24 @@ The app keeps one demo organization, **Greenfield Institute (Demo)**, with 12 em
 | Admin (owner) | `admin@greenfield.test` | `Demo@1234` | Every page of the organization panel |
 | HR | `hr@greenfield.test` | `Demo@1234` | Dashboard, employees, attendance, punch in / out, shifts, import, own attendance & slips |
 | Accounts | `accounts@greenfield.test` | `Demo@1234` | Dashboard, salary slips, own attendance & slips |
-| Employee | `employee@greenfield.test` | `Demo@1234` | Own attendance & salary slips |
+| Employee | `employee@greenfield.test` | `Demo@1234` | Own attendance, shift, leave, profile, letters, resignation |
 
 - The demo is rebuilt at midnight (`Demo:TimeZone`, default `Asia/Kolkata`), and on startup if it was last built before today. Only the demo organization and these four logins are deleted and recreated; real customers are never touched. The super admin can also click **Reset demo now** on *Customers & trials*.
 - Demo logins cannot open the account pages (change password, email or delete account).
 - Settings: `Demo:Enabled` (turn the demo off), `Demo:Password`, `Demo:TimeZone`.
+
+### Employee self-service
+
+Staff with a login (HR, Accounts, Employee) get a **Me** menu:
+
+- **My attendance**: each day with in / out times, their shift (timings, break, grace, full / half day), and the month's salary slip.
+- **Leave**: balances (casual 12, sick 8, earned 15 a year by default, pro-rated for joiners), apply (half day allowed, up to 30 days back), cancel while pending. Sundays and holidays are not counted.
+- **My profile**: photo (JPEG / PNG / WebP up to 2 MB, stored in `App_Data/photos`), personal details, address, emergency contact, previous jobs (adds up the prior experience), PAN and Aadhaar (shown masked), salary bank account.
+- **Letters**: offer letter, an appraisal letter for each salary revision, and a relieving letter once a resignation is accepted. Print or save as PDF.
+- **Resignation**: shows the notice period, submit with the last day asked for, withdraw until HR accepts. Once accepted the employee is *On notice* and sees the countdown to the last working day.
+- **Account & password** (everyone, owner too): change the sign-in email and password. Locked for the shared demo logins and while a super admin views a customer.
+
+HR and the owner approve leave and accept or reject resignations under **Leave & resignations**. Approved leave marks the days *On leave* in attendance and uses the balance. Accepting a resignation sets the last working day (the leaving date) and the *On notice* status. Salary revisions are recorded on the employee's page and produce the appraisal letter; the notice period is set there too.
 
 ### Sign in as a customer
 
