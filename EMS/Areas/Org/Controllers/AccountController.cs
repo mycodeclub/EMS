@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+using EMS.Areas.Org.Models;
 using EMS.Services.Auth;
 using EMS.Services.Demo;
 using EMS.Services.Onboarding;
@@ -6,20 +6,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EMS.Areas.Org.Controllers;
-
-public class ChangePasswordForm
-{
-    [Required, DataType(DataType.Password), Display(Name = "Current password")] public string CurrentPassword { get; set; } = string.Empty;
-    [Required, StringLength(100, MinimumLength = 8), DataType(DataType.Password), Display(Name = "New password")] public string NewPassword { get; set; } = string.Empty;
-    [Required, DataType(DataType.Password), Compare(nameof(NewPassword), ErrorMessage = "The passwords do not match."), Display(Name = "Confirm new password")]
-    public string ConfirmPassword { get; set; } = string.Empty;
-}
-
-public class ChangeEmailForm
-{
-    [Required, EmailAddress, StringLength(150), Display(Name = "New sign-in email")] public string NewEmail { get; set; } = string.Empty;
-    [Required, DataType(DataType.Password), Display(Name = "Current password")] public string CurrentPassword { get; set; } = string.Empty;
-}
 
 /// <summary>
 /// The signed-in user's own login: change sign-in email and password. Not available to the shared demo logins, nor to a

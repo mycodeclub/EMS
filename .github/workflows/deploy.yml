@@ -7,7 +7,7 @@ name: Deploy to production
 #   variables: FTP_SERVER, FTP_REMOTE_DIR (site folder, ending in /), FTP_PROTOCOL (ftps or ftp; default ftps),
 #              SUPERADMIN_EMAIL (default superadmin@ems.local)
 #   email (optional): variables EMAIL_SMTP_HOST, EMAIL_SMTP_PORT (587 or 465), EMAIL_ENABLE_SSL, EMAIL_USERNAME,
-#              EMAIL_FROM_ADDRESS, EMAIL_FROM_NAME; secret EMAIL_PASSWORD
+#              EMAIL_FROM_ADDRESS, EMAIL_FROM_NAME, EMAIL_REPLY_TO; secret EMAIL_PASSWORD
 on:
   push:
     branches: [release]
@@ -72,6 +72,7 @@ jobs:
           EMAIL_USERNAME: ${{ vars.EMAIL_USERNAME }}
           EMAIL_FROM_ADDRESS: ${{ vars.EMAIL_FROM_ADDRESS || vars.EMAIL_USERNAME }}
           EMAIL_FROM_NAME: ${{ vars.EMAIL_FROM_NAME || 'EMS by BitProSoftTech' }}
+          EMAIL_REPLY_TO: ${{ vars.EMAIL_REPLY_TO }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
         run: |
           # Email is optional: without EMAIL_SMTP_HOST the site saves mail to App_Data/mail instead of sending it.
@@ -79,7 +80,8 @@ jobs:
           if [ -n "$EMAIL_SMTP_HOST" ]; then
             email=$(jq -n --arg host "$EMAIL_SMTP_HOST" --argjson port "$EMAIL_SMTP_PORT" --argjson ssl "$EMAIL_ENABLE_SSL" \
               --arg user "$EMAIL_USERNAME" --arg pw "$EMAIL_PASSWORD" --arg from "$EMAIL_FROM_ADDRESS" --arg name "$EMAIL_FROM_NAME" \
-              '{SmtpHost: $host, SmtpPort: $port, EnableSsl: $ssl, UserName: $user, Password: $pw, FromAddress: $from, FromName: $name}')
+              --arg reply "$EMAIL_REPLY_TO" \
+              '{SmtpHost: $host, SmtpPort: $port, EnableSsl: $ssl, UserName: $user, Password: $pw, FromAddress: $from, FromName: $name, ReplyToAddress: $reply}')
           fi
           jq -n --arg cs "$CONNECTION_STRING" --arg email "$SUPERADMIN_EMAIL" --arg pw "$SUPERADMIN_PASSWORD" --argjson mail "$email" \
             '{ConnectionStrings: {DefaultConnection: $cs}, SuperAdmin: {Email: $email, Password: $pw}} + (if $mail == {} then {} else {Email: $mail} end)' \

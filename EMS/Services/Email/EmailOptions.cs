@@ -11,6 +11,9 @@ public class EmailOptions
     public string FromAddress { get; set; } = "no-reply@ems.local";
     public string FromName { get; set; } = "EMS";
 
+    /// <summary>Where replies go when the sending mailbox does not receive mail. Optional.</summary>
+    public string? ReplyToAddress { get; set; }
+
     public string? SmtpHost { get; set; }
 
     /// <summary>587 (STARTTLS) or 465 (SSL from the start); 25 for plain relays.</summary>

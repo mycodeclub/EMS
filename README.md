@@ -137,7 +137,7 @@ Table and column names are case-sensitive in PostgreSQL, so quote them: `select 
 | `ConnectionStrings:DefaultConnection`                               | `appsettings.json`                                  | PostgreSQL connection                                                                                 |
 | `SuperAdmin:Email` / `SuperAdmin:Password`                          | `appsettings.json` / `appsettings.Development.json` | Account seeded at startup                                                                             |
 | `Company`                                                           | `appsettings.json`                                  | Company details shown on the landing page                                                             |
-| `Email:SmtpHost`, `SmtpPort`, `UserName`, `Password`, `FromAddress` | `appsettings.json` / environment                    | Outgoing mail. With no `SmtpHost`, mail is saved to `Email:PickupDirectory` (default `App_Data/mail`) |
+| `Email:SmtpHost`, `SmtpPort`, `UserName`, `Password`, `FromAddress` | `appsettings.json` / environment                    | Outgoing mail (optional `ReplyToAddress`). With no `SmtpHost`, mail is saved to `Email:PickupDirectory` (default `App_Data/mail`). A failed send is logged and reported on screen; it never stops the action |
 
 ## Troubleshooting
 
@@ -172,6 +172,7 @@ Settings are in GitHub → **Settings → Environments → production**:
 | Variable | `EMAIL_SMTP_HOST` | Outgoing mail server. Leave unset to save mail to `App_Data/mail` instead of sending |
 | Variable | `EMAIL_SMTP_PORT`, `EMAIL_ENABLE_SSL` | `587` with STARTTLS or `465` with SSL; `true` (default) |
 | Variable | `EMAIL_USERNAME`, `EMAIL_FROM_ADDRESS`, `EMAIL_FROM_NAME` | Mailbox login (e.g. `ems@bitprosofttech.com`), sender address and name |
+| Variable | `EMAIL_REPLY_TO` | Optional address that receives replies, when the sending mailbox cannot |
 | Secret | `EMAIL_PASSWORD` | Mailbox password |
 
 ### HTTPS certificate
