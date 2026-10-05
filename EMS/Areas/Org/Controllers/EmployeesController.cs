@@ -1,16 +1,12 @@
-using System.ComponentModel.DataAnnotations;
-using System.Net;
 using System.Security.Claims;
 using EMS.Areas.Org.Models;
 using EMS.Data;
 using EMS.Models;
 using EMS.Models.Common;
-using EMS.Services.Demo;
 using EMS.Services.Onboarding;
 using EMS.Services.People;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -24,7 +20,7 @@ namespace EMS.Areas.Org.Controllers;
 [Authorize(Roles = AppRoles.PeopleManagers)]
 public class EmployeesController(
     OrganizationContext context, ApplicationDbContext db, SetupService setup, UserManager<IdentityUser> users,
-    IEmailSender emailSender, OnboardingChecklist checklists, DocumentStore documents, PhotoStore photos,
+    EmployeeLoginService logins, OnboardingChecklist checklists, DocumentStore documents, PhotoStore photos,
     ILogger<EmployeesController> logger)
     : OrgController(context)
 {
@@ -332,52 +328,20 @@ public class EmployeesController(
         await Unique(nameof(input.Aadhaar), aadhaar, e => e.Aadhaar == aadhaar, "Aadhaar number");
     }
 
+    /// <summary>Creates the login; returns an error, or the message for HR with the temporary password (shown only this once).</summary>
     private async Task<(string? Error, string? Message)> GrantLoginAsync(Employee employee, string? email, string? role)
     {
-        email = email?.Trim();
-        var error = employee.UserId is not null ? $"{employee.FullName} already has a login."
-            : string.IsNullOrEmpty(email) || !new EmailAddressAttribute().IsValid(email) ? "Enter a valid email for the login."
-            : !CanGrant(role) ? "Only the owner can give HR or Accounts access."
-            : Organization.IsDemo && !email.EndsWith("@greenfield.test", StringComparison.OrdinalIgnoreCase) ? "In the demo, use an email ending in @greenfield.test."
-            : await users.FindByEmailAsync(email) is not null ? $"{email} already has an EMS login."
-            : null;
-        if (error is not null) return (error, null);
+        if (!CanGrant(role)) return ("Only the owner can give HR or Accounts access.", null);
 
-        var password = TrialService.TemporaryPassword();
-        var user = new IdentityUser { UserName = email, Email = email, EmailConfirmed = true };
-        var result = await users.CreateAsync(user, password);
-        if (result.Succeeded) result = await users.AddToRoleAsync(user, role!);
-        if (result.Succeeded && Organization.IsDemo) result = await users.AddClaimAsync(user, new Claim(DemoSeeder.DemoClaim, "true"));
-        if (!result.Succeeded)
-        {
-            if (await users.FindByIdAsync(user.Id) is { } created) await users.DeleteAsync(created);
-            return (string.Join(" ", result.Errors.Select(e => e.Description)), null);
-        }
+        var loginUrl = Url.Page("/Account/Login", null, new { area = "Identity" }, Request.Scheme)!;
+        var result = await logins.GrantAsync(Organization, employee, email, role!, loginUrl);
+        if (!result.Succeeded) return (string.Join(" ", result.Errors), null);
 
-        employee.UserId = user.Id;
-        employee.Email ??= email;
-        await db.SaveChangesAsync();
-        logger.LogInformation("Login {Email} ({Role}) created for employee {Code} of organization {Org}.", email, role, employee.EmpCode, Organization.UniqueId);
-
-        if (!Organization.IsDemo)
-        {
-            try
-            {
-                var link = Url.Page("/Account/Login", null, new { area = "Identity" }, Request.Scheme);
-                await emailSender.SendEmailAsync(email!, $"Your {Organization.Name} login for EMS",
-                    $"<p>Hello {WebUtility.HtmlEncode(employee.FirstName)},</p><p>Welcome to {WebUtility.HtmlEncode(Organization.Name)}! You can now sign in to EMS.</p>"
-                    + $"<p>Email: <b>{WebUtility.HtmlEncode(email)}</b><br />Temporary password: <b>{WebUtility.HtmlEncode(password)}</b></p>"
-                    + $"<p><a href=\"{link}\">Sign in</a>, change your password under Account &amp; password, then complete your <b>Joining checklist</b>: "
-                    + "your details, PAN, Aadhaar, bank account, photo and joining documents.</p>");
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Could not email the new login to {Email}.", email);
-            }
-        }
-
-        return (null, $"Login created as {RoleLabel(role!)}: email {email}, temporary password {password} (shown once"
-            + (Organization.IsDemo ? ")." : "; also emailed)."));
+        var login = result.Data!;
+        var delivery = Organization.IsDemo ? ")."
+            : login.Emailed ? "; also emailed)."
+            : "). The email could not be sent, so share these details with them yourself.";
+        return (null, $"Login created as {RoleLabel(login.Role)}: email {login.Email}, temporary password {login.TemporaryPassword} (shown once{delivery}");
     }
 
     private bool CanGrant(string? role) =>

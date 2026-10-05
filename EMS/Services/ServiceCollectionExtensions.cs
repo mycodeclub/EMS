@@ -15,7 +15,9 @@ public static class ServiceCollectionExtensions
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped(typeof(ICrudService<>), typeof(CrudService<>));
-        services.AddTransient<IEmailSender, EmailSender>();
+        services.AddSingleton<EmailTemplates>();
+        services.AddTransient<IEmailService, SmtpEmailService>();
+        services.AddTransient<IEmailSender, IdentityEmailSender>(); // Identity's built-in pages (forgot password, ...)
         services.AddScoped<OrganizationContext>();
         services.AddScoped<SetupService>();
         services.AddScoped<TrialService>();
@@ -26,6 +28,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<PhotoStore>();
         services.AddSingleton<DocumentStore>();
         services.AddScoped<OnboardingChecklist>();
+        services.AddScoped<EmployeeLoginService>();
         return services;
     }
 }
