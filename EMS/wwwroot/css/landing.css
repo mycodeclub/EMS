@@ -199,9 +199,9 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .industry { padding: 32px 28px; border: 1px solid #ececf0; border-radius: var(--radius-lg); transition: box-shadow .3s ease, transform .3s ease; }
 .industry:hover { box-shadow: var(--shadow); transform: translateY(-4px); }
 .industry-icon { display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 16px; color: #fff; background: linear-gradient(135deg, #2997ff, #0058b9); }
-.industry:nth-child(2) .industry-icon { background: linear-gradient(135deg, #ff9f0a, #e3620b); }
-.industry:nth-child(3) .industry-icon { background: linear-gradient(135deg, #5e5ce6, #3a3a8c); }
-.industry:nth-child(4) .industry-icon { background: linear-gradient(135deg, #30d158, #1f9d55); }
+.industry:nth-child(4n+2) .industry-icon { background: linear-gradient(135deg, #ff9f0a, #e3620b); }
+.industry:nth-child(4n+3) .industry-icon { background: linear-gradient(135deg, #5e5ce6, #3a3a8c); }
+.industry:nth-child(4n+4) .industry-icon { background: linear-gradient(135deg, #30d158, #1f9d55); }
 
 /* Steps */
 .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; counter-reset: step; }

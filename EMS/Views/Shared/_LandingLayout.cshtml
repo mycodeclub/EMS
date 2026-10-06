@@ -3,34 +3,45 @@
 @inject IOptions<CompanyOptions> CompanyOptions
 @{
     var company = CompanyOptions.Value;
-    var title = ViewData["Title"] as string ?? $"{company.ProductName} — Employee Management System";
-    var description = ViewData["Description"] as string
-        ?? "Attendance, shifts and leave for hospitals, hotels and offices of every size. Multiple offices, biometric sync and 24x7 rosters. First month free for up to 20 employees.";
-    var siteUrl = company.SiteUrl?.TrimEnd('/');
+    var title = ViewData["Title"] as string ?? $"{company.ProductName}: {LandingContent.Title} | {company.Name}";
+    var description = ViewData["Description"] as string ?? LandingContent.Description;
+    var siteUrl = company.PublicUrl(Context.Request);
+    var canonical = siteUrl + (ViewData["CanonicalPath"] as string ?? "/");
+    var shareImage = $"{siteUrl}/img/share.png";
 }
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-IN">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>@title</title>
     <meta name="description" content="@description" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+    <link rel="canonical" href="@canonical" />
+    <link rel="alternate" hreflang="en-IN" href="@canonical" />
+    <link rel="alternate" hreflang="x-default" href="@canonical" />
+    <meta name="geo.region" content="IN" />
+    <meta name="geo.placename" content="India" />
     <meta name="theme-color" content="#ffffff" />
     <meta name="application-name" content="@company.ProductName" />
     <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_IN" />
     <meta property="og:site_name" content="@company.ProductName by @company.Name" />
     <meta property="og:title" content="@title" />
     <meta property="og:description" content="@description" />
-    <meta name="twitter:card" content="summary" />
-    @if (!string.IsNullOrWhiteSpace(siteUrl))
-    {
-        <link rel="canonical" href="@siteUrl/" />
-        <meta property="og:url" content="@siteUrl/" />
-        <meta property="og:image" content="@siteUrl/img/logo.svg" />
-    }
+    <meta property="og:url" content="@canonical" />
+    <meta property="og:image" content="@shareImage" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="@company.ProductName — @LandingContent.Title" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="@title" />
+    <meta name="twitter:description" content="@description" />
+    <meta name="twitter:image" content="@shareImage" />
     <link rel="icon" href="~/img/logo.svg" type="image/svg+xml" />
     <link rel="alternate icon" href="~/favicon.ico" />
-    <link rel="apple-touch-icon" href="~/img/logo.svg" />
+    <link rel="icon" href="~/img/icon-512.png" type="image/png" sizes="512x512" />
+    <link rel="apple-touch-icon" href="~/img/icon-180.png" />
     <script>document.documentElement.classList.add('js');</script>
     <link rel="stylesheet" href="~/css/brand.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/landing.css" asp-append-version="true" />

@@ -12,4 +12,8 @@ public class CompanyOptions
     public string? Address { get; set; }
     /// <summary>Public URL of the site, used for canonical and social-sharing links, e.g. https://ems.example.com</summary>
     public string? SiteUrl { get; set; }
+
+    /// <summary><see cref="SiteUrl"/> without a trailing slash, or the current request's scheme and host when it is not set.</summary>
+    public string PublicUrl(HttpRequest request) =>
+        (string.IsNullOrWhiteSpace(SiteUrl) ? $"{request.Scheme}://{request.Host}" : SiteUrl).TrimEnd('/');
 }
