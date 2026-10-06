@@ -61,6 +61,10 @@ builder.Services.AddRateLimiter(options =>
     };
 });
 
+// Outside development, http:// redirects permanently, so search engines index only the https address.
+if (!builder.Environment.IsDevelopment())
+    builder.Services.AddHttpsRedirection(options => options.RedirectStatusCode = StatusCodes.Status301MovedPermanently);
+
 var app = builder.Build();
 
 await app.Services.SeedIdentityAsync();
